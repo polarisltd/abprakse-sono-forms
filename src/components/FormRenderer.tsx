@@ -1,114 +1,117 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
-import { FormDef, FormField } from '@/lib/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { FormDef, FormField, Statement } from '@/lib/types';
 
 interface Props {
   formDef: FormDef;
   statementId: number;
   initialData: Record<string, unknown>;
   readOnly?: boolean;
+  onSaved?: (updated: Statement) => void;
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 const COMMON_FIELDS = new Set(['patient_name', 'patient_birth_year', 'visit_date']);
 
-export default function FormRenderer({ formDef, statementId, initialData, readOnly = false }: Props) {
+export default function FormRenderer({
+  formDef,
+  statementId,
+  initialData,
+  readOnly = false,
+  onSaved,
+}: Props) {
   const [data, setData] = useState<Record<string, unknown>>(initialData);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const pendingRef = useRef<Record<string, unknown>>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const calc = useCallback(
-    (id: string, fields: FormField[]): unknown => {
-      const field = fields.find((f) => f.id === id);
-      if (!field?.calcFrom) return '';
-      return field.calcFrom.reduce((sum, key) => {
-        const v = Number(data[key] ?? 0);
-        return sum + (isNaN(v) ? 0 : v);
-      }, 0);
-    },
-    [data]
-  );
+  // dataRef always mirrors the latest data — updated synchronously before any save
+  const dataRef = useRef<Record<string, unknown>>(initialData);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveStateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flush = useCallback(
-    async (patch: Record<string, unknown>) => {
-      if (!Object.keys(patch).length) return;
-      setSaveState('saving');
-      try {
-        const commonPatch: Record<string, unknown> = {};
-        const formDataPatch: Record<string, unknown> = {};
+  const save = useCallback(async () => {
+    const snapshot = { ...dataRef.current };
 
-        for (const [k, v] of Object.entries(patch)) {
-          if (COMMON_FIELDS.has(k)) {
-            commonPatch[k] = v;
-          } else {
-            formDataPatch[k] = v;
-          }
-        }
+    const commonFields: Record<string, unknown> = {};
+    const formData: Record<string, unknown> = {};
 
-        const body: Record<string, unknown> = { ...commonPatch };
-        if (Object.keys(formDataPatch).length) {
-          // Merge with existing form_data from server
-          const currentFormData = (data['__form_data__'] as Record<string, unknown>) ?? {};
-          body.form_data = { ...currentFormData, ...formDataPatch };
-        }
-
-        const res = await fetch(`/api/statements/${statementId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const updated = await res.json();
-        setData((prev) => ({
-          ...prev,
-          ...updated.form_data,
-          patient_name: updated.patient_name,
-          patient_birth_year: updated.patient_birth_year,
-          visit_date: updated.visit_date,
-          __form_data__: updated.form_data,
-        }));
-        setSaveState('saved');
-        setTimeout(() => setSaveState('idle'), 2000);
-      } catch {
-        setSaveState('error');
+    for (const [k, v] of Object.entries(snapshot)) {
+      if (COMMON_FIELDS.has(k)) {
+        commonFields[k] = v;
+      } else {
+        formData[k] = v;
       }
-    },
-    [data, statementId]
-  );
+    }
+
+    setSaveState('saving');
+    try {
+      const res = await fetch(`/api/statements/${statementId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...commonFields, form_data: formData }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const updated: Statement = await res.json();
+      onSaved?.(updated);
+      setSaveState('saved');
+      if (saveStateTimerRef.current) clearTimeout(saveStateTimerRef.current);
+      saveStateTimerRef.current = setTimeout(() => setSaveState('idle'), 1800);
+    } catch {
+      setSaveState('error');
+    }
+  }, [statementId, onSaved]);
+
+  // Debounced save for typing fields (text, number)
+  const scheduleSave = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => save(), 600);
+  }, [save]);
+
+  // Immediate save on blur (text/number) or change (boolean/select)
+  const saveNow = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    save();
+  }, [save]);
 
   const handleChange = useCallback(
-    (fieldId: string, value: unknown) => {
-      setData((prev) => ({ ...prev, [fieldId]: value }));
-      pendingRef.current[fieldId] = value;
-
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        const patch = { ...pendingRef.current };
-        pendingRef.current = {};
-        flush(patch);
-      }, 800);
+    (fieldId: string, value: unknown, immediate = false) => {
+      // Update ref synchronously first so save() always reads the latest value
+      const next = { ...dataRef.current, [fieldId]: value };
+      dataRef.current = next;
+      setData(next);
+      if (immediate) {
+        saveNow();
+      } else {
+        scheduleSave();
+      }
     },
-    [flush]
+    [saveNow, scheduleSave]
   );
 
   const handleBlur = useCallback(
     (fieldId: string, value: unknown) => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      pendingRef.current[fieldId] = value;
-      const patch = { ...pendingRef.current };
-      pendingRef.current = {};
-      flush(patch);
+      const next = { ...dataRef.current, [fieldId]: value };
+      dataRef.current = next;
+      setData(next);
+      saveNow();
     },
-    [flush]
+    [saveNow]
   );
+
+  const calc = useCallback((id: string): unknown => {
+    const allFields = formDef.sections.flatMap((s) => s.rows.flatMap((r) => r.fields));
+    const field = allFields.find((f) => f.id === id);
+    if (!field?.calcFrom) return '';
+    return field.calcFrom.reduce((sum, key) => {
+      const v = Number(dataRef.current[key] ?? 0);
+      return sum + (isNaN(v) ? 0 : v);
+    }, 0);
+  }, [formDef]);
 
   const renderField = (field: FormField) => {
     if (field.type === 'calculated') {
-      const allFields = formDef.sections.flatMap((s) => s.rows.flatMap((r) => r.fields));
-      const value = calc(field.id, allFields);
+      const value = calc(field.id);
       return (
         <div className="flex items-center gap-2">
           <span className="font-semibold text-blue-700 text-lg">{String(value)}</span>
@@ -129,7 +132,8 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
             className="w-4 h-4 accent-blue-600"
             checked={Boolean(value)}
             disabled={readOnly}
-            onChange={(e) => handleChange(field.id, e.target.checked)}
+            // Booleans have no blur — save immediately on change
+            onChange={(e) => handleChange(field.id, e.target.checked, true)}
           />
           <span className="text-sm text-gray-700">{field.label}</span>
         </label>
@@ -142,8 +146,8 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
           className={`${baseInput} w-full`}
           value={String(value)}
           disabled={readOnly}
-          onChange={(e) => handleChange(field.id, e.target.value)}
-          onBlur={(e) => handleBlur(field.id, e.target.value)}
+          // Selects save immediately on change
+          onChange={(e) => handleChange(field.id, e.target.value, true)}
         >
           <option value=""></option>
           {field.options?.map((o) => (
@@ -197,10 +201,16 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
     <div className="space-y-6">
       {/* Save indicator */}
       {!readOnly && (
-        <div className="flex justify-end">
-          {saveState === 'saving' && <span className="text-xs text-gray-400 animate-pulse">Saglabā...</span>}
-          {saveState === 'saved' && <span className="text-xs text-green-600">✓ Saglabāts</span>}
-          {saveState === 'error' && <span className="text-xs text-red-500">⚠ Kļūda saglabājot</span>}
+        <div className="flex justify-end h-4">
+          {saveState === 'saving' && (
+            <span className="text-xs text-gray-400 animate-pulse">Saglabā...</span>
+          )}
+          {saveState === 'saved' && (
+            <span className="text-xs text-green-600">✓ Saglabāts</span>
+          )}
+          {saveState === 'error' && (
+            <span className="text-xs text-red-500">⚠ Kļūda saglabājot</span>
+          )}
         </div>
       )}
 
@@ -224,11 +234,9 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
             )}
             <div className="space-y-2">
               {section.rows.map((row, rowIdx) => {
-                const boolFields = row.fields.filter((f) => f.type === 'boolean');
-                const nonBoolFields = row.fields.filter((f) => f.type !== 'boolean');
+                const allBool = row.fields.every((f) => f.type === 'boolean');
 
-                // All boolean in this row — render as compact checkbox group
-                if (boolFields.length === row.fields.length) {
+                if (allBool) {
                   return (
                     <div key={rowIdx} className="flex flex-wrap gap-4 py-1">
                       {row.fields.map((field) => (
@@ -238,7 +246,6 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
                   );
                 }
 
-                // Mixed or single field row
                 if (row.fields.length === 1) {
                   const field = row.fields[0];
                   if (field.type === 'boolean') {
@@ -258,15 +265,20 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
                   );
                 }
 
-                // Multiple non-boolean fields in a row
-                if (nonBoolFields.length > 1 || (boolFields.length === 0 && row.fields.length > 1)) {
+                const nonBoolFields = row.fields.filter((f) => f.type !== 'boolean');
+                if (nonBoolFields.length > 1 || (row.fields.length > 1 && allBool === false)) {
                   return (
-                    <div key={rowIdx} className={`grid gap-2 items-start`}
-                      style={{ gridTemplateColumns: `repeat(${row.fields.length}, 1fr)` }}>
+                    <div
+                      key={rowIdx}
+                      className="grid gap-2 items-start"
+                      style={{ gridTemplateColumns: `repeat(${row.fields.length}, 1fr)` }}
+                    >
                       {row.fields.map((field) => (
                         <div key={field.id}>
                           {field.type !== 'boolean' && (
-                            <label className="text-xs text-gray-500 block mb-0.5">{field.label}</label>
+                            <label className="text-xs text-gray-500 block mb-0.5">
+                              {field.label}
+                            </label>
                           )}
                           {renderField(field)}
                         </div>
@@ -280,7 +292,9 @@ export default function FormRenderer({ formDef, statementId, initialData, readOn
                     {row.fields.map((field) => (
                       <div key={field.id} className="flex items-center gap-2">
                         {field.type !== 'boolean' && (
-                          <label className="text-xs text-gray-500 whitespace-nowrap">{field.label}</label>
+                          <label className="text-xs text-gray-500 whitespace-nowrap">
+                            {field.label}
+                          </label>
                         )}
                         {renderField(field)}
                       </div>

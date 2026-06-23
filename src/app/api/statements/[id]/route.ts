@@ -31,13 +31,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const { patient_name, patient_birth_year, visit_date, form_data, is_complete } = body;
 
+    // Coerce empty strings to null; parse birth year as integer
+    const safeName = (patient_name !== '' && patient_name != null) ? String(patient_name) : null;
+    const safeBirthYear = (patient_birth_year !== '' && patient_birth_year != null)
+      ? parseInt(String(patient_birth_year), 10) || null
+      : null;
+    const safeDate = (visit_date !== '' && visit_date != null) ? String(visit_date) : null;
+    const safeComplete = is_complete != null ? Boolean(is_complete) : null;
+
     const rows = await sql`
       UPDATE statements SET
-        patient_name       = COALESCE(${patient_name ?? null}, patient_name),
-        patient_birth_year = COALESCE(${patient_birth_year ?? null}, patient_birth_year),
-        visit_date         = COALESCE(${visit_date ?? null}::date, visit_date),
+        patient_name       = COALESCE(${safeName}, patient_name),
+        patient_birth_year = COALESCE(${safeBirthYear}, patient_birth_year),
+        visit_date         = COALESCE(${safeDate}::date, visit_date),
         form_data          = COALESCE(${form_data != null ? JSON.stringify(form_data) : null}::jsonb, form_data),
-        is_complete        = COALESCE(${is_complete ?? null}, is_complete),
+        is_complete        = COALESCE(${safeComplete}, is_complete),
         updated_at         = NOW()
       WHERE id = ${id}
       RETURNING

@@ -19,6 +19,8 @@ export default function FormPage() {
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Single print ref — always points to the one PrintView in the DOM
   const printRef = useRef<HTMLDivElement>(null);
 
   const formDef = FORM_MAP[formId];
@@ -27,12 +29,17 @@ export default function FormPage() {
     if (!statementId) return;
     fetch(`/api/statements/${statementId}`)
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: Statement) => {
         setStatement(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [statementId]);
+
+  // Called by FormRenderer after every successful field save
+  const handleSaved = (updated: Statement) => {
+    setStatement(updated);
+  };
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -48,7 +55,11 @@ export default function FormPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_complete: true }),
       });
-      if (res.ok) setDone(true);
+      if (res.ok) {
+        const updated: Statement = await res.json();
+        setStatement(updated);
+        setDone(true);
+      }
     } finally {
       setCompleting(false);
     }
@@ -86,6 +97,13 @@ export default function FormPage() {
     );
   }
 
+  const initialData: Record<string, unknown> = {
+    ...((statement.form_data as Record<string, unknown>) ?? {}),
+    patient_name: statement.patient_name ?? '',
+    patient_birth_year: statement.patient_birth_year ?? '',
+    visit_date: statement.visit_date ?? new Date().toISOString().slice(0, 10),
+  };
+
   if (done) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6">
@@ -97,7 +115,7 @@ export default function FormPage() {
             onClick={handlePrint}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Drukāt / PDF
+            🖨 Drukāt / PDF
           </button>
           <Link
             href="/doctor"
@@ -106,21 +124,13 @@ export default function FormPage() {
             Jauna veidlapa
           </Link>
         </div>
-        <div className="hidden">
+        {/* Single PrintView for the done screen */}
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
           <PrintView ref={printRef} formDef={formDef} statement={statement} />
         </div>
       </div>
     );
   }
-
-  // Flatten form_data + common fields for initial values
-  const initialData: Record<string, unknown> = {
-    ...((statement.form_data as Record<string, unknown>) ?? {}),
-    patient_name: statement.patient_name ?? '',
-    patient_birth_year: statement.patient_birth_year ?? '',
-    visit_date: statement.visit_date ?? new Date().toISOString().slice(0, 10),
-    __form_data__: statement.form_data,
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -169,16 +179,12 @@ export default function FormPage() {
           formDef={formDef}
           statementId={statement.id}
           initialData={initialData}
+          onSaved={handleSaved}
         />
       </div>
 
-      {/* Hidden print view */}
-      <div className="hidden print:block">
-        <PrintView ref={printRef} formDef={formDef} statement={statement} />
-      </div>
-
-      {/* Invisible print target */}
-      <div style={{ display: 'none' }}>
+      {/* Single PrintView — off-screen so react-to-print can clone it */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <PrintView ref={printRef} formDef={formDef} statement={statement} />
       </div>
     </div>
