@@ -106,3 +106,31 @@ Common fields (`patient_name`, `patient_birth_year`, `visit_date`) are top-level
 ## Deploy
 
 Deploy to [Vercel](https://vercel.com) and set `DATABASE_URL` as an environment variable in the project settings. Neon works with Vercel out of the box.
+
+
+No Vercel CLI and no existing project config. Here's the plan:
+
+1. Install Vercel CLI
+2. You'll need to run ! vercel login yourself (interactive browser login)
+3. Deploy with ! vercel --prod from the project root
+4. Add DATABASE_URL as an environment variable in Vercel dashboard
+
+Now follow these steps in order:
+
+- Step 1 — Log in to Vercel (opens browser):
+! vercel login
+
+- Step 2 — Deploy (run from the repo root):
+! cd /Users/robertsp/workspace/abprakse-sono-forms && vercel --prod
+When prompted: confirm the project name, keep defaults, set framework to Next.js.
+
+- Step 3 — Add the database secret in the Vercel dashboard:
+
+After deploy finishes, go to your project → Settings → Environment Variables and add:
+- Name: DATABASE_URL
+- Value: (the Neon connection string from .env.local)
+- Environment: Production, Preview, Development
+
+Step 4 — Redeploy so the env var takes effect:
+! cd /Users/robertsp/workspace/abprakse-sono-forms && vercel --prod
+
