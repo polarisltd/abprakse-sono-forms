@@ -48,8 +48,8 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
         </div>
       </div>
 
-      {/* Sections in 2-column layout */}
-      <div className="columns-2 gap-4">
+      {/* Sections in 2-column layout (F005 prints single-column) */}
+      <div className={formDef.id === 'F005' ? 'columns-1' : 'columns-2 gap-4'}>
         {formDef.sections.map((section) => {
           if (section.rows.length === 0 && section.note) {
             return (

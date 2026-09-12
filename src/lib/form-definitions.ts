@@ -265,13 +265,9 @@ export const FORMS: FormDef[] = [
               },
             ],
           },
-          {
-            fields: [
-              { id: 'sirdsdarbiba', label: 'Sirdsdarbība', type: 'text' },
-              { id: 'ritmiska', label: 'Ritmiska', type: 'text' },
-              { id: 'sirdsdarbiba_xmin', label: 'x/min', type: 'integer', unit: 'x/min' },
-            ],
-          },
+          { fields: [{ id: 'sirdsdarbiba', label: 'Sirdsdarbība', type: 'text' }] },
+          { fields: [{ id: 'ritmiska', label: 'Ritmiska', type: 'text' }] },
+          { fields: [{ id: 'sirdsdarbiba_xmin', label: 'x/min', type: 'integer', unit: 'x/min' }] },
         ],
       },
       {
