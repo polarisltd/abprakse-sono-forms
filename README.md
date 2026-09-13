@@ -103,6 +103,32 @@ CREATE TABLE statements (
 
 Common fields (`patient_name`, `patient_birth_year`, `visit_date`) are top-level columns. All other form-specific fields are stored in `form_data` JSONB.
 
+## Data retention
+
+Form data (the `statements` table — patient visits and their `form_data`)
+is temporary: any row older than **12 hours** (by `created_at`) is deleted
+automatically. Everything else (`doctors`, form definitions, etc.) is
+permanent and is never touched by this job.
+
+This runs as an hourly [Vercel Cron Job](https://vercel.com/docs/cron-jobs)
+defined in `vercel.json`, hitting `GET /api/cron/purge-statements` on the
+schedule `0 * * * *` (once per hour). The route is also reachable via `POST`
+for a manual/on-demand purge.
+
+To protect the endpoint in production, set a `CRON_SECRET` environment
+variable in the Vercel project (Settings → Environment Variables). Vercel
+automatically sends it as `Authorization: Bearer <CRON_SECRET>` on cron
+invocations; the route rejects any other caller once the secret is set. If
+`CRON_SECRET` is unset (e.g. local dev), the route allows unauthenticated
+calls so it's easy to test with `curl`.
+
+Cron jobs only run on deployed (production) environments, not `next dev` —
+to test locally, call the route directly:
+
+```bash
+curl -X POST http://localhost:3000/api/cron/purge-statements
+```
+
 ## Deploy
 
 Deploy to [Vercel](https://vercel.com) and set `DATABASE_URL` as an environment variable in the project settings. Neon works with Vercel out of the box.
@@ -133,4 +159,16 @@ After deploy finishes, go to your project → Settings → Environment Variables
 
 Step 4 — Redeploy so the env var takes effect:
 ! cd /Users/robertsp/workspace/abprakse-sono-forms && vercel --prod
+
+
+## Deployment example
+```
+$ vercel --prod
+Vercel CLI 59.16.0 (Node.js 24.10.0)
+  Inspect         https://vercel.com/polarisltd-6471s-projects/abprakse-sono-forms/8QtXdLKHAgssrYH6X6ScPsgjpyei
+  Production      https://abprakse-sono-forms-p9cm5qfq3-polarisltd-6471s-projects.vercel.app
+▲ Aliased         https://abprakse-sono-forms.vercel.app
+
+✓ Ready in 29s
+```
 
