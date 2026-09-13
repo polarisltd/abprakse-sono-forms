@@ -110,24 +110,42 @@ is temporary: any row older than **12 hours** (by `created_at`) is deleted
 automatically. Everything else (`doctors`, form definitions, etc.) is
 permanent and is never touched by this job.
 
-This runs as an hourly [Vercel Cron Job](https://vercel.com/docs/cron-jobs)
-defined in `vercel.json`, hitting `GET /api/cron/purge-statements` on the
-schedule `0 * * * *` (once per hour). The route is also reachable via `POST`
-for a manual/on-demand purge.
+The purge itself lives at `POST /api/cron/purge-statements`
+(`src/app/api/cron/purge-statements/route.ts`). It's guarded by a
+`CRON_SECRET`: set it as an environment variable on the Vercel project
+(Settings → Environment Variables) and the route only accepts calls whose
+`Authorization` header is `Bearer <CRON_SECRET>`. If it's left unset (e.g.
+local dev), the route allows unauthenticated calls so it's easy to test.
 
-To protect the endpoint in production, set a `CRON_SECRET` environment
-variable in the Vercel project (Settings → Environment Variables). Vercel
-automatically sends it as `Authorization: Bearer <CRON_SECRET>` on cron
-invocations; the route rejects any other caller once the secret is set. If
-`CRON_SECRET` is unset (e.g. local dev), the route allows unauthenticated
-calls so it's easy to test with `curl`.
+**Scheduling:** Vercel's Hobby (free) plan only allows *daily* Cron Jobs, so
+an hourly schedule can't be defined via `vercel.json` without upgrading to
+Pro. Instead, `.github/workflows/purge-statements.yml` runs the schedule
+for free on GitHub Actions — hourly, calling the endpoint above.
 
-Cron jobs only run on deployed (production) environments, not `next dev` —
-to test locally, call the route directly:
+One-time setup:
+
+1. Generate a secret: `openssl rand -hex 32`.
+2. Add it as `CRON_SECRET` in the Vercel project's environment variables,
+   then redeploy.
+3. Add the *same* value as a repository secret named `CRON_SECRET` in
+   GitHub: repo → Settings → Secrets and variables → Actions → New
+   repository secret.
+4. Push the workflow file to the default branch — GitHub then runs it
+   hourly on its own; no Vercel plan change needed. It can also be run
+   on demand from the repo's Actions tab ("Run workflow").
+
+To test the endpoint directly (bypassing the schedule):
 
 ```bash
 curl -X POST http://localhost:3000/api/cron/purge-statements
+# or, against production, with the secret:
+curl -X POST -H "Authorization: Bearer <CRON_SECRET>" \
+  https://abprakse-sono-forms.vercel.app/api/cron/purge-statements
 ```
+
+If a paid Vercel plan becomes available later, this can move back to a
+native Vercel Cron Job — just add a `vercel.json` with a `crons` entry
+pointing at the same path and drop the GitHub Actions workflow.
 
 ## Deploy
 
@@ -163,6 +181,7 @@ Step 4 — Redeploy so the env var takes effect:
 
 ## Deployment example
 ```
+$ vercel login
 $ vercel --prod
 Vercel CLI 59.16.0 (Node.js 24.10.0)
   Inspect         https://vercel.com/polarisltd-6471s-projects/abprakse-sono-forms/8QtXdLKHAgssrYH6X6ScPsgjpyei

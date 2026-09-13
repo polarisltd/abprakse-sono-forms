@@ -1,0 +1,36 @@
+name: Purge expired form data
+
+# Vercel's Hobby plan only allows daily Cron Jobs, so the hourly purge runs
+# here instead — GitHub Actions is free and calls the same authenticated
+# endpoint (src/app/api/cron/purge-statements/route.ts) that a Vercel Cron
+# Job would have called.
+#
+# Setup (one-time):
+#   1. Set CRON_SECRET as an environment variable on the Vercel project
+#      (Settings -> Environment Variables), any value, e.g.:
+#        openssl rand -hex 32
+#   2. Add the SAME value as a repository secret here:
+#      GitHub repo -> Settings -> Secrets and variables -> Actions
+#      -> New repository secret -> name: CRON_SECRET
+#   3. Push this file to the repo's default branch — GitHub then runs it
+#      on the schedule below automatically. No Vercel plan change needed.
+#
+# Note: GitHub's schedule is best-effort (it can slip a few minutes under
+# load), which is fine here since the retention window is 12 hours.
+
+on:
+  schedule:
+    - cron: '5 * * * *' # hourly, at :05
+  workflow_dispatch: {} # allows manual "Run workflow" from the Actions tab
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call purge-statements endpoint
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w '\nHTTP %{http_code}\n' \
+            --fail-with-body \
+            "https://abprakse-sono-forms.vercel.app/api/cron/purge-statements"
