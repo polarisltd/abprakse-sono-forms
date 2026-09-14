@@ -69,6 +69,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | F007 | Augļa Ultrasongrāfija III Trimestris (version A) |
 | F008 | Augļa Ultrasongrāfija III Trimestris (version B) |
 | F009 | Ultrasongrāfija 20+0–21+6 gr.nedēļās (Mid-trimester) |
+| F010 | I trimestra skrīninga protokols — FMF 11+0–13+6 (First trimester screening) |
 
 Form schemas live in `src/lib/form-definitions.ts`.
 

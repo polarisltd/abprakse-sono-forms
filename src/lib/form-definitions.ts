@@ -930,6 +930,340 @@ export const FORMS: FormDef[] = [
       },
     ],
   },
+
+  // ─── F010 I trimestra skrīninga protokols (FMF 11+0–13+6) ────────────────
+  {
+    id: 'F010',
+    title: 'I trimestra skrīninga protokols',
+    subtitle: 'FMF — 11+0–13+6 gr. nedēļas',
+    avatar: '🧬',
+    sections: [
+      {
+        id: 'veidlapas_dati',
+        title: 'Veidlapas dati',
+        rows: [
+          { fields: [{ id: 'patient_name', label: 'Vārds, uzvārds', type: 'text', common: true }] },
+          { fields: [{ id: 'patient_birth_year', label: 'Dzimšanas gads (dz. g.)', type: 'year', common: true }] },
+          { fields: [{ id: 'visit_date', label: 'Izmeklēšanas datums', type: 'date', common: true }] },
+        ],
+      },
+      {
+        id: 'mates_dati',
+        title: 'Mātes un grūtniecības raksturlielumi',
+        rows: [
+          {
+            fields: [
+              {
+                id: 'etniska_izcelsme',
+                label: 'Etniskā izcelsme',
+                type: 'select',
+                options: [
+                  'Baltā (Eiropas, Tuvo Austrumu, Ziemeļāfrikas, Hispanic)',
+                  'Melnādainā (Āfrikas–Karību)',
+                  'Dienvidāzijas',
+                  'Austrumāzijas',
+                  'Jaukta',
+                ],
+              },
+            ],
+          },
+          { fields: [{ id: 'paritate', label: 'Paritāte (iepriekšējās dzemdības)', type: 'integer', min: 0 }] },
+          {
+            fields: [
+              { id: 'mates_svars', label: 'Mātes svars (kg)', type: 'decimal', unit: 'kg' },
+              { id: 'mates_augums', label: 'Augums (cm)', type: 'decimal', unit: 'cm' },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'cukura_diabets',
+                label: 'Cukura diabēts',
+                type: 'select',
+                options: ['nav', '1. tipa', '2. tipa', 'gestācijas'],
+              },
+            ],
+          },
+          {
+            fields: [
+              { id: 'smekesana', label: 'Smēķēšana šajā grūtniecībā', type: 'boolean' },
+              { id: 'hron_hipertensija', label: 'Hroniska hipertensija', type: 'boolean' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'sle', label: 'Sistēmas sarkanā vilkēde (SLE)', type: 'boolean' },
+              { id: 'aps', label: 'Antifosfolipīdu sindroms (APS)', type: 'boolean' },
+            ],
+          },
+          { fields: [{ id: 'mates_preeklampsija', label: 'Pacientes mātei bijusi preeklampsija', type: 'boolean' }] },
+          {
+            fields: [
+              {
+                id: 'ienemsanas_veids',
+                label: 'Ieņemšanas veids',
+                type: 'select',
+                options: ['Spontāna', 'Ovulācijas indukcija', 'IVF / ICSI'],
+              },
+            ],
+          },
+          { fields: [{ id: 'pm', label: 'P.M. (pēdējās menstruācijas)', type: 'date' }] },
+          { fields: [{ id: 'pdt_pec_pm', label: 'Paredzamais dzemdību termiņš (pēc P.M.)', type: 'date' }] },
+        ],
+      },
+      {
+        id: 'us_izmeklejums',
+        title: 'I trimestra ultrasonogrāfija',
+        rows: [
+          {
+            fields: [
+              {
+                id: 'vizualizacija',
+                label: 'Vizualizācija',
+                type: 'select',
+                options: [
+                  'apmierinoša',
+                  'ierobežo augļa kustības',
+                  'ierobežo mātes ķermeņa uzbūve',
+                  'apgrūtināta',
+                ],
+              },
+            ],
+          },
+          {
+            fields: [
+              { id: 'gest_vecums_ned', label: 'Gestācijas vecums pēc CRL (ned.)', type: 'integer', min: 10, max: 14 },
+              { id: 'gest_vecums_d', label: 'd.', type: 'integer', min: 0, max: 6 },
+            ],
+          },
+          { fields: [{ id: 'pdt_pec_us', label: 'Paredzamais dzemdību termiņš (pēc US)', type: 'date' }] },
+          {
+            fields: [
+              {
+                id: 'atrade',
+                label: 'Atrade',
+                type: 'select',
+                options: ['Dzīvs auglis', 'Dzīvs auglis — dvīņi', 'Sirdsdarbība nav konstatēta'],
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'sirdsdarbiba',
+                label: 'Augļa sirdsdarbība',
+                type: 'select',
+                options: ['vizualizēta', 'nav vizualizēta'],
+              },
+              { id: 'sirdsdarbiba_xmin', label: 'Frekvence (x/min)', type: 'integer', unit: 'x/min' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'crl', label: 'CRL (mm)', type: 'decimal', unit: 'mm' },
+              { id: 'nt', label: 'Skausta kroka NT (mm)', type: 'decimal', unit: 'mm' },
+            ],
+          },
+          { fields: [{ id: 'ductus_venosus_pi', label: 'Ductus venosus PI', type: 'decimal' }] },
+          {
+            fields: [
+              {
+                id: 'placenta',
+                label: 'Placenta',
+                type: 'select',
+                options: [
+                  'mugurējā sienā, augstu',
+                  'mugurējā sienā, zemu',
+                  'priekšējā sienā, augstu',
+                  'priekšējā sienā, zemu',
+                  'fundus',
+                ],
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'augla_udens',
+                label: 'Augļa ūdens',
+                type: 'select',
+                options: ['norma', 'oligohidramnijs', 'polihidramnijs'],
+              },
+              {
+                id: 'nabas_saite',
+                label: 'Nabas saite',
+                type: 'select',
+                options: ['3 asinsvadi', '2 asinsvadi'],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'hromosomu_markieri',
+        title: 'Hromosomu marķieri',
+        rows: [
+          {
+            fields: [
+              {
+                id: 'deguna_kauls',
+                label: 'Deguna kauls',
+                type: 'select',
+                options: ['ir', 'nav', 'nav novērtēts'],
+              },
+              {
+                id: 'trikuspidala_doplers',
+                label: 'Trikuspidālais Doplers',
+                type: 'select',
+                options: ['norma', 'regurgitācija', 'nav novērtēts'],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'augla_anatomija',
+        title: 'Augļa anatomija',
+        rows: [
+          {
+            fields: [
+              {
+                id: 'anat_galvaskauss_smadzenes',
+                label: 'Galvaskauss / smadzenes',
+                type: 'select',
+                options: ['izskatās normāli', 'novirze', 'nav novērtēts'],
+              },
+              {
+                id: 'anat_mugurkauls',
+                label: 'Mugurkauls',
+                type: 'select',
+                options: ['izskatās normāls', 'novirze', 'nav novērtēts'],
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'anat_vedera_siena',
+                label: 'Vēdera priekšējā siena',
+                type: 'select',
+                options: ['izskatās normāla', 'novirze', 'nav novērtēta'],
+              },
+              {
+                id: 'anat_kundzis',
+                label: 'Kuņģis',
+                type: 'select',
+                options: ['vizualizējas', 'nevizualizējas', 'nav novērtēts'],
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'anat_urinpuslis_nieres',
+                label: 'Urīnpūslis / nieres',
+                type: 'select',
+                options: ['vizualizējas', 'nevizualizējas', 'nav novērtēts'],
+              },
+              {
+                id: 'anat_rokas',
+                label: 'Rokas',
+                type: 'select',
+                options: ['abas vizualizējas', 'nevizualizējas', 'nav novērtēts'],
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'anat_kajas',
+                label: 'Kājas',
+                type: 'select',
+                options: ['abas vizualizējas', 'nevizualizējas', 'nav novērtēts'],
+              },
+            ],
+          },
+          { fields: [{ id: 'anat_piezimes', label: 'Anatomijas piezīmes', type: 'textarea', lines: 2 }] },
+        ],
+      },
+      {
+        id: 'biokimija',
+        title: 'Mātes seruma bioķīmija',
+        rows: [
+          {
+            fields: [
+              { id: 'parauga_datums', label: 'Parauga datums', type: 'date' },
+              {
+                id: 'iekarta',
+                label: 'Iekārta',
+                type: 'select',
+                options: ['Roche', 'Delfia', 'Kryptor', 'Beckman'],
+              },
+            ],
+          },
+          {
+            fields: [
+              { id: 'bhcg', label: 'Brīvais β-hCG (IU/l)', type: 'decimal', unit: 'IU/l' },
+              { id: 'bhcg_mom', label: 'β-hCG MoM', type: 'decimal' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'papp_a', label: 'PAPP-A (IU/l)', type: 'decimal', unit: 'IU/l' },
+              { id: 'papp_a_mom', label: 'PAPP-A MoM', type: 'decimal' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'a_uterina_pi', label: 'A. uterina PI', type: 'decimal' },
+              { id: 'a_uterina_pi_mom', label: 'A. uterina PI MoM', type: 'decimal' },
+            ],
+          },
+          { fields: [{ id: 'endocervikala_garums', label: 'Endocervikālais garums (mm)', type: 'decimal', unit: 'mm' }] },
+        ],
+      },
+      {
+        id: 'riski',
+        title: 'Riski un konsultēšana',
+        note: 'Risku pieraksta formā 1: 771 vai <1: 20000.',
+        rows: [
+          { fields: [{ id: 'konsultacija_piekrisana', label: 'Paciente konsultēta, piekrišana saņemta', type: 'boolean' }] },
+          {
+            fields: [
+              { id: 'operators', label: 'Operators', type: 'text' },
+              { id: 'fmf_id', label: 'FMF ID', type: 'text' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'risks_t21_fona', label: 'Trisomija 21 — fona risks', type: 'text' },
+              { id: 'risks_t21_kor', label: 'Trisomija 21 — koriģētais risks', type: 'text' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'risks_t18_fona', label: 'Trisomija 18 — fona risks', type: 'text' },
+              { id: 'risks_t18_kor', label: 'Trisomija 18 — koriģētais risks', type: 'text' },
+            ],
+          },
+          {
+            fields: [
+              { id: 'risks_t13_fona', label: 'Trisomija 13 — fona risks', type: 'text' },
+              { id: 'risks_t13_kor', label: 'Trisomija 13 — koriģētais risks', type: 'text' },
+            ],
+          },
+          { fields: [{ id: 'risks_preeklampsija_34', label: 'Preeklampsija līdz 34. ned. — koriģētais risks', type: 'text' }] },
+          { fields: [{ id: 'risks_fgr_37', label: 'Augļa augšanas aizture līdz 37. ned. — koriģētais risks', type: 'text' }] },
+          { fields: [{ id: 'sledziens', label: 'Slēdziens un norādījumi', type: 'textarea', lines: 4 }] },
+        ],
+      },
+      {
+        id: 'piezime',
+        note: 'Skrīnings nosaka riska pakāpi, nevis diagnozi. Ultrasonogrāfijas izmeklējums neatspoguļo visas iespējamās augļa anatomiskās un ģenētiskās patoloģijas.',
+        rows: [],
+      },
+    ],
+  },
 ];
 
 export const FORM_MAP = Object.fromEntries(FORMS.map((f) => [f.id, f]));

@@ -46,9 +46,9 @@ export async function POST() {
     if (Number(existing[0].count) === 0) {
       await sql`
         INSERT INTO doctors (name, avatar, form_ids) VALUES
-          ('Ārsts 1', '👩‍⚕️', ARRAY['F001','F004','F005','F007','F009']),
+          ('Ārsts 1', '👩‍⚕️', ARRAY['F001','F004','F005','F007','F009','F010']),
           ('Ārsts 2', '👨‍⚕️', ARRAY['F002','F003','F006','F008']),
-          ('Ārsts 3', '🩺', ARRAY['F001','F002','F003','F004','F005','F006','F007','F008','F009'])
+          ('Ārsts 3', '🩺', ARRAY['F001','F002','F003','F004','F005','F006','F007','F008','F009','F010'])
       `;
     }
 
