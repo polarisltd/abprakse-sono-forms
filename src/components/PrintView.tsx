@@ -10,6 +10,12 @@ interface Props {
   statement: Statement;
 }
 
+/**
+ * Forms whose content is mostly long free text — two narrow columns would
+ * break the prose across the page.
+ */
+const SINGLE_COLUMN_FORMS = new Set(['F005', 'F011']);
+
 const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref) => {
   const data: Record<string, unknown> = {
     ...statement.form_data,
@@ -49,7 +55,7 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
       </div>
 
       {/* Sections in 2-column layout (F005 prints single-column) */}
-      <div className={formDef.id === 'F005' ? 'columns-1' : 'columns-2 gap-4'}>
+      <div className={SINGLE_COLUMN_FORMS.has(formDef.id) ? 'columns-1' : 'columns-2 gap-4'}>
         {formDef.sections.map((section) => {
           if (section.rows.length === 0 && section.note) {
             return (
@@ -99,6 +105,24 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
                         );
                       }
                       if (field.type === 'textarea') {
+                        // No label — the value spans both cells (F011).
+                        if (!field.label) {
+                          return (
+                            <tr key={rowIdx}>
+                              <td
+                                colSpan={2}
+                                className="py-0.5 border-b border-dotted border-gray-400 align-top"
+                              >
+                                <div
+                                  className="min-h-4 whitespace-pre-wrap"
+                                  style={{ minHeight: `${(field.lines ?? 2) * 1.2}em` }}
+                                >
+                                  {renderValue(field)}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
                         return (
                           <tr key={rowIdx}>
                             <td className="font-medium pr-2 align-top py-0.5 whitespace-nowrap w-1/3">

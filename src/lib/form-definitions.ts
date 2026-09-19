@@ -1258,6 +1258,30 @@ export const FORMS: FormDef[] = [
       },
     ],
   },
+
+  // ─── F011 Krūšu sonogrāfija ───────────────────────────────────────────────
+  // Mirrors the practice's pre-printed sheet: patient header, one large free
+  // text area with no caption, then Slēdziens. Deliberately has no section
+  // title over the description — the paper form has none either.
+  {
+    id: 'F011',
+    title: 'Krūšu sonogrāfija',
+    avatar: '🫀',
+    sections: [
+      {
+        id: 'pacienta_dati',
+        title: 'Pacienta dati',
+        rows: COMMON_HEADER_ROWS,
+      },
+      {
+        id: 'izmeklejums',
+        rows: [
+          { fields: [{ id: 'apraksts', label: '', type: 'textarea', lines: 8 }] },
+          { fields: [{ id: 'sledziens', label: 'Slēdziens', type: 'textarea', lines: 4 }] },
+        ],
+      },
+    ],
+  },
 ];
 
 export const FORM_MAP = Object.fromEntries(FORMS.map((f) => [f.id, f]));

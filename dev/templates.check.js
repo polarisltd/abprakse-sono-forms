@@ -12,7 +12,12 @@ const assert = require('assert');
 const path = require('path');
 
 const t = require(path.join(__dirname, '..', '.test-build', 'templates.js'));
-const FORM_IDS = ['F001', 'F002', 'F003', 'F004', 'F005', 'F006', 'F007', 'F008', 'F009', 'F010'];
+
+// Derived, not hardcoded: a form added later is covered without touching this
+// file, which is the point — the PII guarantee has to hold for every form.
+const { FORMS } = require(path.join(__dirname, '..', '.test-build', 'form-definitions.js'));
+const FORM_IDS = FORMS.map((f) => f.id);
+assert.ok(FORM_IDS.length > 0, 'no forms found — the whole suite would pass vacuously');
 
 let pass = 0;
 const failures = [];

@@ -315,6 +315,15 @@ export default function FormRenderer({
                       </div>
                     );
                   }
+                  // A field with no label gets the full width rather than an
+                  // empty 180px label column (F011's free-text description).
+                  if (!field.label) {
+                    return (
+                      <div key={rowIdx} className="py-1">
+                        {renderField(field)}
+                      </div>
+                    );
+                  }
                   return (
                     <div key={rowIdx} className="grid grid-cols-[180px_1fr] items-start gap-2">
                       <label className="text-sm text-gray-600 pt-1.5 font-medium leading-tight">
