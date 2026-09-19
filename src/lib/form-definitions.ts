@@ -1266,7 +1266,10 @@ export const FORMS: FormDef[] = [
   {
     id: 'F011',
     title: 'Krūšu sonogrāfija',
-    avatar: '🫀',
+    // Reminder ribbon — the standard breast-health symbol, and the closest
+    // emoji that reads as "breast" in a clinical context without being
+    // anatomical or crude. Renders pink on Apple platforms.
+    avatar: '🎗️',
     sections: [
       {
         id: 'pacienta_dati',
