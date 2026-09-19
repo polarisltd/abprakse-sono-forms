@@ -35,11 +35,30 @@ export async function POST() {
     `;
 
     await sql`
+      CREATE TABLE IF NOT EXISTS form_templates (
+        id SERIAL PRIMARY KEY,
+        form_id VARCHAR(5) NOT NULL,
+        slot SMALLINT NOT NULL,
+        label VARCHAR(24),
+        form_data JSONB NOT NULL DEFAULT '{}',
+        created_by INTEGER REFERENCES doctors(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT form_templates_slot_range CHECK (slot BETWEEN 1 AND 12),
+        CONSTRAINT form_templates_form_slot_uniq UNIQUE (form_id, slot)
+      )
+    `;
+
+    await sql`
       CREATE INDEX IF NOT EXISTS idx_statements_visit_date ON statements(visit_date)
     `;
 
     await sql`
       CREATE INDEX IF NOT EXISTS idx_statements_created_at ON statements(created_at DESC)
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_form_templates_form ON form_templates(form_id, slot)
     `;
 
     const existing = await sql`SELECT COUNT(*) AS count FROM doctors`;

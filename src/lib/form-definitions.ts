@@ -246,7 +246,7 @@ export const FORMS: FormDef[] = [
         title: 'Pacienta dati',
         rows: [
           { fields: [{ id: 'patient_name', label: 'Paciente (vārds, uzvārds)', type: 'text', common: true }] },
-          { fields: [{ id: 'personas_kods', label: 'Personas kods', type: 'text' }] },
+          { fields: [{ id: 'personas_kods', label: 'Personas kods', type: 'text', sensitive: true }] },
           { fields: [{ id: 'visit_date', label: 'Datums', type: 'date', common: true }] },
           { fields: [{ id: 'gestacijas_nedelas', label: 'Gestācijas nedēļas pēc p.m.', type: 'text' }] },
         ],

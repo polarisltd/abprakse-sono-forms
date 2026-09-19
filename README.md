@@ -73,6 +73,36 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Form schemas live in `src/lib/form-definitions.ts`.
 
+## Templates (veidnes)
+
+Most reports are a "normal findings" protocol with a few measurements changed,
+so any form can be saved as a reusable template and re-applied with one tap.
+
+A template bar sits under the form header on every form: **💾 Saglabāt**,
+**🗑 Dzēst**, then the saved slots `T01`…`T12`. Tapping a slot replaces every
+field it covers and offers **Atsaukt** for 10 seconds — there is no confirmation
+dialog anywhere in the flow. Long-press (or right-click) a slot to overwrite it
+with the current form data, rename it, inspect what it holds, or delete it.
+
+Templates are **shared practice-wide and scoped per form** — `T01` on F001 is
+the same template for every doctor. There are at most 12 slots per form; the
+server allocates the lowest free one, so saving never requires typing.
+
+**Templates never contain patient data.** `patient_name`,
+`patient_birth_year`, `visit_date`, every field flagged `sensitive` in the form
+definitions (currently `personas_kods` on F005) and all calculated fields are
+stripped server-side in `src/lib/templates.ts` before anything is written,
+because template rows are permanent while statement rows are purged after 12
+hours. A patient identifier that is not a top-level column gets
+`sensitive: true` on its field definition — that is the whole mechanism.
+That guarantee is covered by a check across all ten forms:
+
+```bash
+npm run test:templates
+```
+
+Design notes, API contract and edge cases: `specs/feature-templates.md`.
+
 ## Database schema
 
 ```sql
@@ -100,16 +130,38 @@ CREATE TABLE statements (
   created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+-- Form templates (reusable prefilled protocols, shared practice-wide)
+CREATE TABLE form_templates (
+  id          SERIAL PRIMARY KEY,
+  form_id     VARCHAR(5)   NOT NULL,           -- F001..F010
+  slot        SMALLINT     NOT NULL,           -- 1..12, shown as T01..T12
+  label       VARCHAR(24),                     -- optional, e.g. 'Norma'
+  form_data   JSONB        NOT NULL DEFAULT '{}',
+  created_by  INTEGER      REFERENCES doctors(id) ON DELETE SET NULL,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  CONSTRAINT form_templates_slot_range CHECK (slot BETWEEN 1 AND 12),
+  CONSTRAINT form_templates_form_slot_uniq UNIQUE (form_id, slot)
+);
 ```
 
 Common fields (`patient_name`, `patient_birth_year`, `visit_date`) are top-level columns. All other form-specific fields are stored in `form_data` JSONB.
+
+`UNIQUE (form_id, slot)` is the concurrency control for template slots: two
+doctors saving at the same instant cannot take the same slot — one insert
+fails and is retried against the next free one.
 
 ## Data retention
 
 Form data (the `statements` table — patient visits and their `form_data`)
 is temporary: any row older than **12 hours** (by `created_at`) is deleted
-automatically. Everything else (`doctors`, form definitions, etc.) is
-permanent and is never touched by this job.
+automatically. Everything else (`doctors`, `form_templates`, form definitions,
+etc.) is permanent and is never touched by this job.
+
+Because `form_templates` rows are permanent, they are the one place where text
+entered on a form can outlive the retention window — which is why the template
+sanitiser strips patient fields server-side (see **Templates** above).
 
 The purge itself lives at `POST /api/cron/purge-statements`
 (`src/app/api/cron/purge-statements/route.ts`). It's guarded by a
@@ -191,4 +243,29 @@ Vercel CLI 59.16.0 (Node.js 24.10.0)
 
 ✓ Ready in 29s
 ```
+deployment 2026-09-14
+```
+Nociceptors-MacBook-Air:abprakse-sono-forms robertsp$ vercel --prod
+Vercel CLI 59.16.0 (Node.js 24.10.0)
+  Inspect         https://vercel.com/polarisltd-6471s-projects/abprakse-sono-forms/2krj7fN1piFvzwFveswRDKMptgAS
+  Production      https://abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app
+▲ Aliased         https://abprakse-sono-forms.vercel.app
+
+✓ Ready in 21s
+
+Next steps:
+- Automatically deploy changes on every push by connecting Git:
+  vercel git connect
+- Check the deployment response:
+  vercel curl https://abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app
+- View build logs:
+  vercel inspect abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app --logs
+- Create a new deployment from the same source:
+  vercel redeploy abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app
+
+
+```
+
+
+
 

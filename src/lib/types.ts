@@ -41,6 +41,12 @@ export interface FormField {
   lines?: number;
   unit?: string;
   common?: boolean;
+  /**
+   * Patient-identifying. Saved on the statement like any other field (and so
+   * purged with it after 12h), but never written into a template, which is
+   * permanent. Use this for identifiers that are not top-level columns.
+   */
+  sensitive?: boolean;
   readOnly?: boolean;
   min?: number;
   max?: number;
@@ -64,4 +70,16 @@ export interface FormDef {
   subtitle?: string;
   avatar: string;
   sections: FormSection[];
+}
+
+export interface FormTemplate {
+  id: number;
+  form_id: string;
+  slot: number;
+  /** Display name derived from `slot` server-side: 'T01'. */
+  code: string;
+  label: string | null;
+  form_data: Record<string, unknown>;
+  created_by: number | null;
+  updated_at: string;
 }

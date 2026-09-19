@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FormDef, FormField, Statement } from '@/lib/types';
+import { commonFieldIds } from '@/lib/templates';
+import TemplateBar, { TemplateBarHandle } from './TemplateBar';
 
 interface Props {
   formDef: FormDef;
@@ -9,11 +11,13 @@ interface Props {
   initialData: Record<string, unknown>;
   readOnly?: boolean;
   onSaved?: (updated: Statement) => void;
+  /** Stamped onto templates saved from this form, for audit only. */
+  doctorId?: number | null;
+  /** Defaults to on whenever the form is editable. */
+  templatesEnabled?: boolean;
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
-
-const COMMON_FIELDS = new Set(['patient_name', 'patient_birth_year', 'visit_date']);
 
 export default function FormRenderer({
   formDef,
@@ -21,6 +25,8 @@ export default function FormRenderer({
   initialData,
   readOnly = false,
   onSaved,
+  doctorId,
+  templatesEnabled,
 }: Props) {
   const [data, setData] = useState<Record<string, unknown>>(initialData);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -29,6 +35,12 @@ export default function FormRenderer({
   const dataRef = useRef<Record<string, unknown>>(initialData);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveStateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const templateBarRef = useRef<TemplateBarHandle>(null);
+
+  // Patient/visit fields live in top-level columns, not in form_data. Driven by
+  // the shared helper (the `common` flag on the field definitions) so the save
+  // split and the template sanitiser can never disagree about what is PII.
+  const commonIds = useMemo(() => commonFieldIds(formDef.id), [formDef.id]);
 
   const save = useCallback(async () => {
     const snapshot = { ...dataRef.current };
@@ -37,7 +49,7 @@ export default function FormRenderer({
     const formData: Record<string, unknown> = {};
 
     for (const [k, v] of Object.entries(snapshot)) {
-      if (COMMON_FIELDS.has(k)) {
+      if (commonIds.has(k)) {
         commonFields[k] = v;
       } else {
         formData[k] = v;
@@ -60,7 +72,7 @@ export default function FormRenderer({
     } catch {
       setSaveState('error');
     }
-  }, [statementId, onSaved]);
+  }, [statementId, onSaved, commonIds]);
 
   // Debounced save for typing fields (text, number)
   const scheduleSave = useCallback(() => {
@@ -80,6 +92,7 @@ export default function FormRenderer({
       const next = { ...dataRef.current, [fieldId]: value };
       dataRef.current = next;
       setData(next);
+      templateBarRef.current?.markDirty();
       if (immediate) {
         saveNow();
       } else {
@@ -94,9 +107,44 @@ export default function FormRenderer({
       const next = { ...dataRef.current, [fieldId]: value };
       dataRef.current = next;
       setData(next);
+      templateBarRef.current?.markDirty();
       saveNow();
     },
     [saveNow]
+  );
+
+  /** Snapshot for TemplateBar's Save / Pārrakstīt, read only when tapped. */
+  const getCurrentData = useCallback(() => dataRef.current, []);
+
+  /**
+   * Apply a template: full replace of every field it covers, persisted through
+   * the same save path as any field edit. Returns the undo closure that the
+   * toast wires to "Atsaukt" — FormRenderer owns it because FormRenderer owns
+   * dataRef, and there must stay exactly one writer to the form state.
+   */
+  const applyTemplate = useCallback(
+    (values: Record<string, unknown>) => {
+      const previous = { ...dataRef.current };
+
+      const next = { ...dataRef.current };
+      for (const [k, v] of Object.entries(values)) {
+        // Belt and braces: the API already strips these, but a patient name
+        // must never be written back into a live form by a template.
+        if (commonIds.has(k)) continue;
+        next[k] = v;
+      }
+
+      dataRef.current = next;
+      setData(next);
+      saveNow();
+
+      return () => {
+        dataRef.current = previous;
+        setData(previous);
+        saveNow();
+      };
+    },
+    [commonIds, saveNow]
   );
 
   const calc = useCallback((id: string): unknown => {
@@ -197,8 +245,20 @@ export default function FormRenderer({
     );
   };
 
+  const showTemplates = templatesEnabled ?? !readOnly;
+
   return (
     <div className="space-y-6">
+      {showTemplates && (
+        <TemplateBar
+          ref={templateBarRef}
+          formId={formDef.id}
+          doctorId={doctorId}
+          getCurrentData={getCurrentData}
+          onApply={applyTemplate}
+        />
+      )}
+
       {/* Save indicator */}
       {!readOnly && (
         <div className="flex justify-end h-4">

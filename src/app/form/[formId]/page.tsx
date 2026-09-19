@@ -23,13 +23,33 @@ export default function FormPage() {
   // Single print ref — always points to the one PrintView in the DOM
   const printRef = useRef<HTMLDivElement>(null);
 
+  // The template bar sticks directly beneath this header, so its height has to
+  // be a real measurement rather than a hardcoded offset: a long form title
+  // wraps to two lines on a tablet and a guessed constant leaves a gap or
+  // covers the first field.
+  const headerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const publish = () =>
+      document.documentElement.style.setProperty('--form-header-h', `${el.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [statement, done]);
+
   const formDef = FORM_MAP[formId];
 
   useEffect(() => {
     if (!statementId) return;
     fetch(`/api/statements/${statementId}`)
-      .then((r) => r.json())
-      .then((data: Statement) => {
+      // A 404 still returns valid JSON ({"error":"Not found"}), which is
+      // truthy — without this check it sails past the `!statement` guard below
+      // and renders a form whose statement.id is undefined, so every field
+      // save PUTs to /api/statements/undefined.
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Statement | null) => {
         setStatement(data);
         setLoading(false);
       })
@@ -135,7 +155,10 @@ export default function FormPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
-      <div className="no-print bg-white border-b shadow-sm sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
+      <div
+        ref={headerRef}
+        className="no-print bg-white border-b shadow-sm sticky top-0 z-10 px-4 py-3 flex items-center justify-between"
+      >
         <div className="flex items-center gap-3">
           <Link href="/doctor" className="text-blue-500 hover:underline text-sm">
             ← Atpakaļ
@@ -180,6 +203,8 @@ export default function FormPage() {
           statementId={statement.id}
           initialData={initialData}
           onSaved={handleSaved}
+          doctorId={statement.doctor_id}
+          templatesEnabled={!statement.is_complete}
         />
       </div>
 
