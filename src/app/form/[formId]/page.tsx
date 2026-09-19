@@ -44,8 +44,12 @@ export default function FormPage() {
   useEffect(() => {
     if (!statementId) return;
     fetch(`/api/statements/${statementId}`)
-      .then((r) => r.json())
-      .then((data: Statement) => {
+      // A 404 still returns valid JSON ({"error":"Not found"}), which is
+      // truthy — without this check it sails past the `!statement` guard below
+      // and renders a form whose statement.id is undefined, so every field
+      // save PUTs to /api/statements/undefined.
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Statement | null) => {
         setStatement(data);
         setLoading(false);
       })
