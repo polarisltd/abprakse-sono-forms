@@ -30,24 +30,25 @@
 
 *4 kameras, AV un VA vārstuļi, starpsiena, plaušu un sistēmas vēnas, maģistrālie asinsvadi un aortas loks:*
 
-| Struktūra                                | Atrade  |
-|------------------------------------------|---------|
-| **4 kameras**                            | boolean |
-| **AV un VA vārstuļi**                    | boolean |
-| **Starpsiena**                           | boolean |
-| **Plaušu un sistēmas vēnas**             | boolean |
-| **Maģistrālie asinsvadi un aortas loks** | boolean |
-| ** sirds anatomija, komentārs**          | text    |
+| Lauks            | Vērtība |
+|------------------|---------|
+| **Komentārs**    | 3 lines |
+
+*Per-structure checkboxes were removed 2026-09-19 — the subtitle above lists
+what the doctor assesses, and the finding is written as free text.*
 
 -----
 
 ## Doplerogrāfija
 
-|Parametrs        |Vērtība           |
-|-----------------|------------------|
-|**PW Doplers**   |*(nav aizpildīts)*|
-|**CW Doplers**   |*(nav aizpildīts)*|
-|**Krāsu Doplers**|*(nav aizpildīts)*|
+*PW un Krāsu Doplers*
+
+|Lauks         |Vērtība |
+|--------------|--------|
+|**Komentārs** |3 lines |
+
+*The three separate modality fields (PW / CW / Krāsu) were removed
+2026-09-19 and replaced by the subtitle above plus one free-text field.*
 
 -----
 

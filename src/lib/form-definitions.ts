@@ -275,21 +275,15 @@ export const FORMS: FormDef[] = [
         title: 'Sirds anatomija',
         note: '4 kameras, AV un VA vārstuļi, starpsiena, plaušu un sistēmas vēnas, maģistrālie asinsvadi un aortas loks:',
         rows: [
-          { fields: [{ id: 'anatomija_4_kameras', label: '4 kameras', type: 'boolean' }] },
-          { fields: [{ id: 'anatomija_av_va', label: 'AV un VA vārstuļi', type: 'boolean' }] },
-          { fields: [{ id: 'anatomija_starpsiena', label: 'Starpsiena', type: 'boolean' }] },
-          { fields: [{ id: 'anatomija_plaushu_venas', label: 'Plaušu un sistēmas vēnas', type: 'boolean' }] },
-          { fields: [{ id: 'anatomija_magistralie', label: 'Maģistrālie asinsvadi un aortas loks', type: 'boolean' }] },
-          { fields: [{ id: 'anatomija_komentars', label: 'Komentārs', type: 'textarea', lines: 2 }] },
+          { fields: [{ id: 'anatomija_komentars', label: 'Komentārs', type: 'textarea', lines: 3 }] },
         ],
       },
       {
         id: 'doplerogrāfija',
         title: 'Doplerogrāfija',
+        note: 'PW un Krāsu Doplers',
         rows: [
-          { fields: [{ id: 'pw_doplers', label: 'PW Doplers', type: 'text' }] },
-          { fields: [{ id: 'cw_doplers', label: 'CW Doplers', type: 'text' }] },
-          { fields: [{ id: 'krasu_doplers', label: 'Krāsu Doplers', type: 'text' }] },
+          { fields: [{ id: 'doplers_komentars', label: 'Komentārs', type: 'textarea', lines: 3 }] },
         ],
       },
       {
