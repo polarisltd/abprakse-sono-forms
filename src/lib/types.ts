@@ -65,3 +65,15 @@ export interface FormDef {
   avatar: string;
   sections: FormSection[];
 }
+
+export interface FormTemplate {
+  id: number;
+  form_id: string;
+  slot: number;
+  /** Display name derived from `slot` server-side: 'T01'. */
+  code: string;
+  label: string | null;
+  form_data: Record<string, unknown>;
+  created_by: number | null;
+  updated_at: string;
+}

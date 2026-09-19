@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:templates": "tsc src/lib/templates.ts --outDir .test-build --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck && node dev/templates.check.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

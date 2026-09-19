@@ -3,6 +3,10 @@
 :root {
   --background: #f8fafc;
   --foreground: #1e293b;
+  /* Height of the sticky form header. Measured at runtime by the form page so
+     the template bar sticks flush beneath it whatever the title wraps to; this
+     value is only the pre-hydration fallback. */
+  --form-header-h: 57px;
 }
 
 body {

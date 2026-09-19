@@ -142,3 +142,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 .vercel
+
+# template sanitiser check build output
+.test-build
