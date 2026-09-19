@@ -29,14 +29,23 @@ const dirty = {
   patient_name: 'Anna Ozola',
   patient_birth_year: 1987,
   visit_date: '2026-09-19',
+  personas_kods: '010187-12345',
   not_a_real_field_xyz: 'injected',
 };
 
 for (const formId of FORM_IDS) {
   check(`${formId}: no patient data survives sanitize`, () => {
     const out = t.sanitizeTemplateData(formId, dirty);
-    for (const k of ['patient_name', 'patient_birth_year', 'visit_date']) {
+    for (const k of ['patient_name', 'patient_birth_year', 'visit_date', 'personas_kods']) {
       assert.ok(!(k in out), `${k} leaked into a permanent template row`);
+    }
+  });
+
+  check(`${formId}: every field flagged sensitive is excluded`, () => {
+    const out = t.sanitizeTemplateData(formId, dirty);
+    const flagged = t.formFields(formId).filter((f) => f.sensitive === true);
+    for (const f of flagged) {
+      assert.ok(!(f.id in out), `sensitive field ${f.id} stored in a template`);
     }
   });
 
@@ -65,13 +74,24 @@ for (const formId of FORM_IDS) {
     }
   });
 
-  check(`${formId}: apply never writes patient data back into a live form`, () => {
+  check(`${formId}: apply never writes or clears patient data in a live form`, () => {
     const vals = t.applicableTemplateValues(formId, dirty);
-    for (const k of ['patient_name', 'patient_birth_year', 'visit_date', 'not_a_real_field_xyz']) {
+    const keys = ['patient_name', 'patient_birth_year', 'visit_date', 'personas_kods',
+                  'not_a_real_field_xyz'];
+    for (const k of keys) {
       assert.ok(!(k in vals), `${k} would be written into a live form`);
     }
   });
 }
+
+check('at least one form actually declares a sensitive field', () => {
+  const flagged = FORM_IDS.flatMap((id) => t.formFields(id).filter((f) => f.sensitive === true));
+  assert.ok(flagged.length > 0, 'no sensitive fields found — the exclusion check is vacuous');
+  assert.ok(
+    flagged.some((f) => f.id === 'personas_kods'),
+    'personas_kods is no longer flagged sensitive'
+  );
+});
 
 check('slotCode zero-pads', () => {
   assert.strictEqual(t.slotCode(1), 'T01');

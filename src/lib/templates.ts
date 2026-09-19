@@ -35,7 +35,9 @@ export function commonFieldIds(formId: string): Set<string> {
 /** A field whose value belongs to the protocol rather than to the patient. */
 export function templatableFieldIds(formId: string): FormField[] {
   const common = commonFieldIds(formId);
-  return formFields(formId).filter((f) => !common.has(f.id) && f.type !== 'calculated');
+  return formFields(formId).filter(
+    (f) => !common.has(f.id) && f.sensitive !== true && f.type !== 'calculated'
+  );
 }
 
 /** The value an unfilled field of this type should carry inside a template. */
@@ -50,9 +52,10 @@ function emptyValueFor(field: FormField): unknown {
  * is what makes applying a template a true replace rather than a merge, so
  * switching from T02 back to T01 clears whatever T02 had set.
  *
- * Drops, unconditionally: common/patient fields, calculated fields, and any key
- * that is not part of the form definition. Runs server-side so a bad client
- * cannot persist patient data into a row that outlives the 12h purge window.
+ * Drops, unconditionally: common/patient fields, fields flagged `sensitive`
+ * (identifiers such as Personas kods), calculated fields, and any key that is
+ * not part of the form definition. Runs server-side so a bad client cannot
+ * persist patient data into a row that outlives the 12h purge window.
  */
 export function sanitizeTemplateData(
   formId: string,
@@ -69,8 +72,9 @@ export function sanitizeTemplateData(
 
 /**
  * Values to write into a live form when a template is applied. Keys unknown to
- * the current form definition are dropped (definition drift), patient fields
- * can never come back in.
+ * the current form definition are dropped (definition drift), and patient
+ * fields can never come back in — which also means applying a template never
+ * clears an identifier the doctor has already typed.
  */
 export function applicableTemplateValues(
   formId: string,

@@ -41,6 +41,12 @@ export interface FormField {
   lines?: number;
   unit?: string;
   common?: boolean;
+  /**
+   * Patient-identifying. Saved on the statement like any other field (and so
+   * purged with it after 12h), but never written into a template, which is
+   * permanent. Use this for identifiers that are not top-level columns.
+   */
+  sensitive?: boolean;
   readOnly?: boolean;
   min?: number;
   max?: number;

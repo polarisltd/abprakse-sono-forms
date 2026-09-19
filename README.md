@@ -89,9 +89,12 @@ the same template for every doctor. There are at most 12 slots per form; the
 server allocates the lowest free one, so saving never requires typing.
 
 **Templates never contain patient data.** `patient_name`,
-`patient_birth_year`, `visit_date` and all calculated fields are stripped
-server-side in `src/lib/templates.ts` before anything is written, because
-template rows are permanent while statement rows are purged after 12 hours.
+`patient_birth_year`, `visit_date`, every field flagged `sensitive` in the form
+definitions (currently `personas_kods` on F005) and all calculated fields are
+stripped server-side in `src/lib/templates.ts` before anything is written,
+because template rows are permanent while statement rows are purged after 12
+hours. A patient identifier that is not a top-level column gets
+`sensitive: true` on its field definition — that is the whole mechanism.
 That guarantee is covered by a check across all ten forms:
 
 ```bash

@@ -119,13 +119,23 @@ Excluded, unconditionally and server-side:
 ```
 any field with common === true                 -- PII / per-visit
   (today: patient_name, patient_birth_year, visit_date)
+any field with sensitive === true              -- identifier, not a column
+  (today: personas_kods on F005)
 any field with type === 'calculated'           -- derived, never authored
 any key absent from FORM_MAP[form_id]          -- drift / bad client
 ```
 
-The exclusion is driven by the `common` flag already carried by the field
-definitions, not by a hardcoded id list — so a fourth common field added later
-is excluded automatically. Note that `FormRenderer` currently duplicates this
+The exclusion is driven by flags already carried by the field definitions, not
+by a hardcoded id list — so a fourth common field added later is excluded
+automatically.
+
+`common` and `sensitive` are deliberately separate. `common` means "stored as a
+top-level column on `statements`", which drives the save split as well; marking
+`personas_kods` common would route it to a column that does not exist and the
+value would never be saved at all. `sensitive` means only "patient-identifying,
+so never into a permanent row" — it saves normally inside `form_data` and is
+purged with the statement after 12 h. Applying a template therefore also never
+clears an identifier the doctor has already typed. Note that `FormRenderer` currently duplicates this
 knowledge in a local `COMMON_FIELDS` set; `src/lib/templates.ts` should export
 the single predicate and `FormRenderer` should use it, retiring the set.
 
