@@ -14,7 +14,7 @@ interface Props {
  * Forms whose content is mostly long free text — two narrow columns would
  * break the prose across the page.
  */
-const SINGLE_COLUMN_FORMS = new Set(['F005', 'F011']);
+const SINGLE_COLUMN_FORMS = new Set(['F005', 'F011', 'F012']);
 
 const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref) => {
   const data: Record<string, unknown> = {

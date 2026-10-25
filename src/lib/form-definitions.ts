@@ -1295,6 +1295,77 @@ export const FORMS: FormDef[] = [
       },
     ],
   },
+
+  // ─── F012 Augļa Ehokardigrāfija (free-text anatomy variant) ───────────────
+  // Same Pacienta dati / Izmeklējuma parametri as F005, but the structured
+  // Sirds anatomija + Doplerogrāfija findings are replaced by one large free
+  // text area, and Slēdziens un norādījumi keeps its original two text fields
+  // instead of F005's constant "Dati par augļa patoloģiju nav" finding.
+  {
+    id: 'F012',
+    title: 'Augļa Ehokardigrāfija',
+    subtitle: 'brīvā teksta variants',
+    avatar: '💓',
+    sections: [
+      {
+        id: 'pacienta_dati',
+        title: 'Pacienta dati',
+        rows: [
+          { fields: [{ id: 'patient_name', label: 'Paciente (vārds, uzvārds)', type: 'text', common: true }] },
+          { fields: [{ id: 'personas_kods', label: 'Personas kods', type: 'text', sensitive: true }] },
+          { fields: [{ id: 'visit_date', label: 'Datums', type: 'date', common: true }] },
+          { fields: [{ id: 'gestacijas_nedelas', label: 'Gestācijas nedēļas pēc p.m.', type: 'text' }] },
+        ],
+      },
+      {
+        id: 'parametri',
+        title: 'Izmeklējuma parametri',
+        rows: [
+          {
+            fields: [
+              {
+                id: 'vizualizacija',
+                label: 'Vizualizācija',
+                type: 'toggle',
+                options: ['Apmierinoši', 'Neapmierinoši'],
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                id: 'sirdsdarbiba_ritms',
+                label: 'Sirdsdarbība',
+                type: 'toggle',
+                options: ['Ritmiska', 'Aritmiska'],
+              },
+              { id: 'sirdsdarbiba_xmin', label: '', type: 'integer', unit: 'x/min' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'anatomija',
+        title: 'Sirds anatomija',
+        rows: [
+          { fields: [{ id: 'anatomija_apraksts', label: '', type: 'textarea', lines: 8 }] },
+        ],
+      },
+      {
+        id: 'sledziens',
+        title: 'Slēdziens un norādījumi',
+        rows: [
+          { fields: [{ id: 'sledziens', label: 'Slēdziens', type: 'textarea', lines: 3 }] },
+          { fields: [{ id: 'noradijumi', label: 'Norādījumi', type: 'textarea', lines: 3 }] },
+        ],
+      },
+      {
+        id: 'piezime',
+        note: 'NB! Grūtniecības laikā ar šo izmeklēšanas metodi pilnībā nav iespējams izslēgt visas iespējamās sirds patoloģijas, piemēram, ātriju starpsienas defektus, nelielus ventrikulu starpsienas defektus, progresējošas vārstuļu patoloģijas un aortas koarktāciju.',
+        rows: [],
+      },
+    ],
+  },
 ];
 
 export const FORM_MAP = Object.fromEntries(FORMS.map((f) => [f.id, f]));
