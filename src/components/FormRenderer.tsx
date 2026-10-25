@@ -188,6 +188,22 @@ export default function FormRenderer({
       );
     }
 
+    if (field.type === 'toggle') {
+      const options = field.options ?? [];
+      const current = (value as string) || options[0] || '';
+      const next = current === options[0] ? options[1] : options[0];
+      return (
+        <span
+          className={`text-sm underline decoration-dotted decoration-gray-400 ${
+            readOnly ? 'text-gray-700' : 'text-gray-900 cursor-pointer hover:decoration-gray-700'
+          }`}
+          onClick={() => !readOnly && handleChange(field.id, next, true)}
+        >
+          {current}
+        </span>
+      );
+    }
+
     if (field.type === 'select') {
       return (
         <select
@@ -275,7 +291,7 @@ export default function FormRenderer({
       )}
 
       {formDef.sections.map((section) => {
-        if (section.rows.length === 0 && section.note) {
+        if (section.rows.length === 0 && section.note && !section.title) {
           return (
             <div key={section.id} className="text-xs text-gray-500 italic border-t pt-3">
               ⚠️ {section.note}
@@ -290,7 +306,16 @@ export default function FormRenderer({
               </h3>
             )}
             {section.note && (
-              <p className="text-xs text-gray-500 italic mb-2">{section.note}</p>
+              <p
+                className={[
+                  section.noteBold ? 'font-bold text-gray-700' : 'text-gray-500 italic',
+                  section.noteFontSize ? '' : 'text-xs',
+                  'mb-2',
+                ].join(' ')}
+                style={section.noteFontSize ? { fontSize: section.noteFontSize } : undefined}
+              >
+                {section.note}
+              </p>
             )}
             <div className="space-y-2">
               {section.rows.map((row, rowIdx) => {
@@ -330,6 +355,29 @@ export default function FormRenderer({
                         {field.label}
                       </label>
                       <div>{renderField(field)}</div>
+                    </div>
+                  );
+                }
+
+                // A row whose first field carries the row's label and whose
+                // remaining fields are unlabeled continuations renders as one
+                // inline line (e.g. "Sirdsdarbība: Ritmiska  120 x/min").
+                if (
+                  row.fields.length > 1 &&
+                  !allBool &&
+                  row.fields[0].label &&
+                  row.fields.slice(1).every((f) => !f.label)
+                ) {
+                  return (
+                    <div key={rowIdx} className="grid grid-cols-[180px_1fr] items-start gap-2">
+                      <label className="text-sm text-gray-600 pt-1.5 font-medium leading-tight">
+                        {row.fields[0].label}
+                      </label>
+                      <div className="flex items-center gap-2 flex-wrap pt-1.5">
+                        {row.fields.map((field) => (
+                          <div key={field.id}>{renderField(field)}</div>
+                        ))}
+                      </div>
                     </div>
                   );
                 }

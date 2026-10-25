@@ -29,6 +29,7 @@ export type FieldType =
   | 'decimal'
   | 'boolean'
   | 'select'
+  | 'toggle'
   | 'date'
   | 'year'
   | 'calculated';
@@ -61,6 +62,9 @@ export interface FormSection {
   id: string;
   title?: string;
   note?: string;
+  noteBold?: boolean;
+  /** Font size for `note`, e.g. '1.2rem'. Defaults to the ambient text-xs size. */
+  noteFontSize?: string;
   rows: FormRow[];
 }
 

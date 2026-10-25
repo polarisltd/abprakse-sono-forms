@@ -32,6 +32,7 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
       return `${total}${field.max ? ` / ${field.max}` : ''}`;
     }
     const v = data[field.id];
+    if (field.type === 'toggle') return (v as string) || field.options?.[0] || '';
     if (v === undefined || v === null || v === '') return '';
     if (field.type === 'boolean') return v ? '✓' : '—';
     if (field.unit) return `${v} ${field.unit}`;
@@ -57,7 +58,7 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
       {/* Sections in 2-column layout (F005 prints single-column) */}
       <div className={SINGLE_COLUMN_FORMS.has(formDef.id) ? 'columns-1' : 'columns-2 gap-4'}>
         {formDef.sections.map((section) => {
-          if (section.rows.length === 0 && section.note) {
+          if (section.rows.length === 0 && section.note && !section.title) {
             return (
               <div key={section.id} className="break-inside-avoid mt-2 text-gray-500 italic text-xs">
                 ⚠️ {section.note}
@@ -70,7 +71,12 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
                 <div className="font-bold border-b border-gray-400 mb-1">{section.title}</div>
               )}
               {section.note && (
-                <div className="italic text-gray-500 mb-1">{section.note}</div>
+                <div
+                  className={[section.noteBold ? 'font-bold text-black' : 'italic text-gray-500', 'mb-1'].join(' ')}
+                  style={section.noteFontSize ? { fontSize: section.noteFontSize } : undefined}
+                >
+                  {section.note}
+                </div>
               )}
               <table className="w-full border-collapse">
                 <tbody>
@@ -146,6 +152,26 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
                         </tr>
                       );
                     }
+                    // A row whose first field carries the row's label and the
+                    // rest are unlabeled continuations prints as one line
+                    // (e.g. "Sirdsdarbība | Ritmiska 120 x/min").
+                    if (row.fields[0].label && row.fields.slice(1).every((f) => !f.label)) {
+                      return (
+                        <tr key={rowIdx}>
+                          <td className="font-medium pr-2 py-0.5 whitespace-nowrap w-1/3 align-top">
+                            {row.fields[0].label}
+                          </td>
+                          <td className="py-0.5 border-b border-dotted border-gray-400">
+                            <div className="flex flex-wrap gap-3">
+                              {row.fields.map((field) => (
+                                <span key={field.id}>{renderValue(field)}</span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
                     // Multiple fields in a row
                     return (
                       <tr key={rowIdx}>
