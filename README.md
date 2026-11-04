@@ -55,6 +55,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `/form/[formId]?id=X` | Doctor | Fill ultrasound form (auto-saves on every field) |
 | `/midwife` | Midwife | View today's statements, date navigation, print |
 | `/admin` | Admin | Add/edit doctors, assign forms, set avatars |
+| `/admin/templates` | Admin | Create/edit/archive rich-text document templates |
+| `/document/[id]` | Doctor | Fill a rich-text document (auto-saves) |
 
 ## Forms
 
@@ -104,6 +106,34 @@ npm run test:templates
 
 Design notes, API contract and edge cases: `specs/feature-templates.md`.
 
+## Document templates (brīvā teksta dokumenti)
+
+A second, parallel form type for reports that are prose rather than
+measurements (e.g. abdomen/thyroid/hip/neuro ultrasound reports). An admin
+authors named templates with a rich-text body at `/admin/templates` — bold,
+italic, four font sizes, nothing else. No code change or deploy is needed to
+add a new document type.
+
+On `/doctor`, each active template appears as its own tile (📝) alongside the
+structured forms. Starting one opens a patient search/create step — the
+practice's **persistent patient roster** (`patients` table, not purged) —
+then copies the template's current body into a new, independently-editable
+document at `/document/[id]`. Editing, autosave, print/PDF and the midwife's
+daily list all work exactly like the structured forms; a document is simply
+a `statements` row with `template_id`/`body_html` set instead of
+`form_id`/`form_data`.
+
+**Unlike every other table in this app, the patient roster is not purged.**
+Patient identity (name, birth year, optionally a personal code) has to
+survive beyond 12 hours for "choose an existing patient" to mean anything —
+a deliberate, scoped exception to this app's purge-everything privacy model.
+See `specs/feature-document-templates.md` §3.1 for the reasoning and the
+compliance caveat.
+
+Design notes, data model, API contract and the six seed templates:
+`specs/feature-document-templates.md`. Seed them with
+`npm run seed:doc-templates` against a running dev server.
+
 ## Database schema
 
 ```sql
@@ -145,6 +175,33 @@ CREATE TABLE form_templates (
   CONSTRAINT form_templates_slot_range CHECK (slot BETWEEN 1 AND 12),
   CONSTRAINT form_templates_form_slot_uniq UNIQUE (form_id, slot)
 );
+
+-- Rich-text document templates (admin-authored, see "Document templates" above)
+CREATE TABLE doc_templates (
+  id          SERIAL PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  body_html   TEXT         NOT NULL DEFAULT '',
+  active      BOOLEAN      NOT NULL DEFAULT true,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- The document feature's own patient roster — NOT purged, unlike everything else
+CREATE TABLE patients (
+  id             SERIAL PRIMARY KEY,
+  name           VARCHAR(255) NOT NULL,
+  birth_year     INTEGER,
+  personal_code  VARCHAR(32),
+  created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- `statements` additionally carries (nullable, unused by structured forms):
+--   template_id    INTEGER REFERENCES doc_templates(id) ON DELETE SET NULL
+--   template_name  VARCHAR(100)  -- snapshot of doc_templates.name at creation
+--   body_html      TEXT          -- the document's editable rich-text body
+--   patient_id     INTEGER REFERENCES patients(id) ON DELETE SET NULL
+-- form_id is nullable for the same reason: a document row leaves it NULL.
 ```
 
 Common fields (`patient_name`, `patient_birth_year`, `visit_date`) are top-level columns. All other form-specific fields are stored in `form_data` JSONB.
@@ -155,10 +212,13 @@ fails and is retried against the next free one.
 
 ## Data retention
 
-Form data (the `statements` table — patient visits and their `form_data`)
-is temporary: any row older than **12 hours** (by `created_at`) is deleted
-automatically. Everything else (`doctors`, `form_templates`, form definitions,
-etc.) is permanent and is never touched by this job.
+Form data (the `statements` table — patient visits and their `form_data`,
+and now also rich-text documents' `body_html`) is temporary: any row older
+than **12 hours** (by `created_at`) is deleted automatically. Everything else
+(`doctors`, `form_templates`, `doc_templates`, form definitions, etc.) is
+permanent and is never touched by this job — **including `patients`**, which
+is the one deliberate, scoped exception to "patient data doesn't outlive a
+visit" (see **Document templates** above).
 
 Because `form_templates` rows are permanent, they are the one place where text
 entered on a form can outlive the retention window — which is why the template

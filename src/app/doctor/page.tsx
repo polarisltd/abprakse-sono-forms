@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Doctor } from '@/lib/types';
+import { Doctor, DocTemplate, Patient } from '@/lib/types';
 import { FORM_MAP } from '@/lib/form-definitions';
+import PatientPicker from '@/components/PatientPicker';
 
 export default function DoctorPage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Doctor | null>(null);
+
+  // Document templates are practice-wide (no per-doctor assignment in v1,
+  // unlike form_ids) — fetched once, shown to every doctor.
+  const [docTemplates, setDocTemplates] = useState<DocTemplate[]>([]);
+  const [pickerTemplate, setPickerTemplate] = useState<DocTemplate | null>(null);
+  const [creatingDoc, setCreatingDoc] = useState(false);
 
   useEffect(() => {
     fetch('/api/doctors')
@@ -18,7 +25,34 @@ export default function DoctorPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetch('/api/doc-templates?active=true')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setDocTemplates(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
+
+  const handleCreateDocument = async (patient: Patient) => {
+    if (!pickerTemplate || !selected || creatingDoc) return;
+    setCreatingDoc(true);
+    try {
+      const res = await fetch('/api/statements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: pickerTemplate.id,
+          doctor_id: selected.id,
+          patient_id: patient.id,
+          visit_date: new Date().toISOString().slice(0, 10),
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const statement = await res.json();
+      window.location.href = `/document/${statement.id}`;
+    } catch {
+      setCreatingDoc(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -83,7 +117,7 @@ export default function DoctorPage() {
 
             <h3 className="text-gray-600 mb-4 font-medium">Izvēlieties veidlapu:</h3>
 
-            {selected.form_ids.length === 0 ? (
+            {selected.form_ids.length === 0 && docTemplates.length === 0 ? (
               <p className="text-gray-400">Šim ārstam nav piešķirtu veidlapu.</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -101,11 +135,32 @@ export default function DoctorPage() {
                     />
                   );
                 })}
+                {docTemplates.map((tpl) => (
+                  <button
+                    key={`doc-${tpl.id}`}
+                    onClick={() => setPickerTemplate(tpl)}
+                    className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow p-6 hover:shadow-md hover:-translate-y-0.5 transition-all border border-transparent hover:border-blue-200"
+                  >
+                    <span className="text-5xl">📝</span>
+                    <div className="text-center">
+                      <div className="font-medium text-gray-700 text-sm">{tpl.name}</div>
+                      <div className="text-xs text-blue-400 mt-1">Dokuments</div>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
         )}
       </div>
+
+      {pickerTemplate && (
+        <PatientPicker
+          templateName={pickerTemplate.name}
+          onCancel={() => setPickerTemplate(null)}
+          onConfirm={handleCreateDocument}
+        />
+      )}
     </main>
   );
 }

@@ -60,12 +60,20 @@ export default function AdminPage() {
           </Link>
           <h1 className="text-xl font-bold text-gray-800">⚙️ Administrēšana</h1>
         </div>
-        <button
-          onClick={handleInitDb}
-          className="px-4 py-2 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition"
-        >
-          Inicializēt DB
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/templates"
+            className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+          >
+            📝 Dokumentu veidnes
+          </Link>
+          <button
+            onClick={handleInitDb}
+            className="px-4 py-2 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition"
+          >
+            Inicializēt DB
+          </button>
+        </div>
       </div>
 
       {dbStatus && (

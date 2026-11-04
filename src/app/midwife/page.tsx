@@ -5,6 +5,7 @@ import { useReactToPrint } from 'react-to-print';
 import { Statement } from '@/lib/types';
 import { FORM_MAP } from '@/lib/form-definitions';
 import PrintView from '@/components/PrintView';
+import DocumentPrintView from '@/components/DocumentPrintView';
 import Link from 'next/link';
 
 function dateOffset(base: string, days: number): string {
@@ -125,7 +126,8 @@ export default function MidwifePage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {statements.map((s) => {
-                  const form = FORM_MAP[s.form_id];
+                  const form = s.form_id ? FORM_MAP[s.form_id] : null;
+                  const isDocument = s.template_id != null;
                   const createdAt = new Date(s.created_at);
                   return (
                     <tr key={s.id} className="hover:bg-gray-50 transition">
@@ -136,8 +138,10 @@ export default function MidwifePage() {
                       <td className="px-4 py-3 text-gray-500">{s.patient_birth_year || '—'}</td>
                       <td className="px-4 py-3">
                         <span className="flex items-center gap-1.5">
-                          <span>{form?.avatar ?? '📄'}</span>
-                          <span className="text-gray-700">{form?.title ?? s.form_id}</span>
+                          <span>{isDocument ? '📝' : (form?.avatar ?? '📄')}</span>
+                          <span className="text-gray-700">
+                            {isDocument ? s.template_name : (form?.title ?? s.form_id)}
+                          </span>
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500">{s.doctor_name || '—'}</td>
@@ -174,7 +178,10 @@ export default function MidwifePage() {
 
       {/* Hidden print target */}
       <div style={{ display: 'none' }}>
-        {printTarget && FORM_MAP[printTarget.form_id] && (
+        {printTarget && printTarget.template_id != null && (
+          <DocumentPrintView ref={printRef} statement={printTarget} />
+        )}
+        {printTarget && printTarget.template_id == null && printTarget.form_id && FORM_MAP[printTarget.form_id] && (
           <PrintView
             ref={printRef}
             formDef={FORM_MAP[printTarget.form_id]}

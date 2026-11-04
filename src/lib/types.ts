@@ -10,7 +10,8 @@ export interface Doctor {
 export interface Statement {
   id: number;
   doc_id: string;
-  form_id: string;
+  /** NULL on a rich-text document row (see template_id). */
+  form_id: string | null;
   visit_date: string;
   doctor_id: number | null;
   doctor_name?: string;
@@ -20,6 +21,14 @@ export interface Statement {
   is_complete: boolean;
   created_at: string;
   updated_at: string;
+  /** Set only on a rich-text document row — see DocTemplate. */
+  template_id: number | null;
+  /** Snapshot of doc_templates.name at creation time; survives rename/delete. */
+  template_name: string | null;
+  /** The document's editable rich-text body. NULL for structured forms. */
+  body_html: string | null;
+  /** Durable link into the patient roster. NULL for structured forms. */
+  patient_id: number | null;
 }
 
 export type FieldType =
@@ -74,6 +83,26 @@ export interface FormDef {
   subtitle?: string;
   avatar: string;
   sections: FormSection[];
+}
+
+/** An admin-authored rich-text document template — see DocumentRenderer. */
+export interface DocTemplate {
+  id: number;
+  name: string;
+  body_html: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A roster entry, persistent (not purged with its statements). */
+export interface Patient {
+  id: number;
+  name: string;
+  birth_year: number | null;
+  personal_code: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface FormTemplate {

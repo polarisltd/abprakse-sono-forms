@@ -49,6 +49,40 @@ export async function POST() {
       )
     `;
 
+    // Rich-text document templates (admin-authored) and the feature's own
+    // persistent patient roster — see specs/feature-document-templates.md.
+    await sql`
+      CREATE TABLE IF NOT EXISTS doc_templates (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        body_html TEXT NOT NULL DEFAULT '',
+        active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS patients (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        birth_year INTEGER,
+        personal_code VARCHAR(32),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    // `statements` grows four nullable columns so a rich-text document is
+    // just a statement row with these set and form_id/form_data unused —
+    // see specs/feature-document-templates.md §4.3. Existing rows are
+    // untouched; form_id only needs to accept NULL going forward.
+    await sql`ALTER TABLE statements ALTER COLUMN form_id DROP NOT NULL`;
+    await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS template_id INTEGER REFERENCES doc_templates(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS template_name VARCHAR(100)`;
+    await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS body_html TEXT`;
+    await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS patient_id INTEGER REFERENCES patients(id) ON DELETE SET NULL`;
+
     await sql`
       CREATE INDEX IF NOT EXISTS idx_statements_visit_date ON statements(visit_date)
     `;
@@ -59,6 +93,10 @@ export async function POST() {
 
     await sql`
       CREATE INDEX IF NOT EXISTS idx_form_templates_form ON form_templates(form_id, slot)
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_patients_name ON patients (lower(name))
     `;
 
     const existing = await sql`SELECT COUNT(*) AS count FROM doctors`;
