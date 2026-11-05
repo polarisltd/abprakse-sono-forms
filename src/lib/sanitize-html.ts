@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtmlLib from 'sanitize-html';
 
 /**
  * Everything the RichTextEditor can ever produce (bold/italic/paragraph,
@@ -7,11 +7,21 @@ import DOMPurify from 'isomorphic-dompurify';
  * time, so a template seeded before this allow-list changes can't carry
  * anything the current one wouldn't permit. See
  * specs/feature-document-templates.md §6.4.
+ *
+ * Uses `sanitize-html` (htmlparser2-based, no DOM) rather than
+ * isomorphic-dompurify/jsdom — the latter crashed every API route that
+ * imported it at module-load time on Vercel's serverless runtime (jsdom's
+ * dynamic requires don't survive Next's function bundling), which took down
+ * every form, not just documents, in production. jsdom is a known
+ * troublemaker there; this avoids the whole dependency.
  */
-const ALLOWED_TAGS = ['p', 'br', 'b', 'strong', 'i', 'em', 'span'];
-const ALLOWED_ATTR = ['style'];
-
 export function sanitizeRichText(html: unknown): string {
   if (typeof html !== 'string') return '';
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });
+  return sanitizeHtmlLib(html, {
+    allowedTags: ['p', 'br', 'b', 'strong', 'i', 'em', 'span'],
+    allowedAttributes: { span: ['style'] },
+    allowedStyles: {
+      span: { 'font-size': [/^\d+(?:\.\d+)?px$/] },
+    },
+  });
 }
