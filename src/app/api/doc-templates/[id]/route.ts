@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sanitizeRichText } from '@/lib/sanitize-html';
+import { docTemplateCode } from '@/lib/doc-templates';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       RETURNING id, name, body_html, active, created_at::text, updated_at::text
     `;
     if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(rows[0]);
+    const row = rows[0] as { id: number };
+    return NextResponse.json({ ...rows[0], code: docTemplateCode(row.id) });
   } catch (err) {
     console.error('PUT /api/doc-templates/[id] error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

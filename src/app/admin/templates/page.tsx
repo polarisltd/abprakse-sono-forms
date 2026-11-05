@@ -87,6 +87,9 @@ export default function AdminTemplatesPage() {
               <div key={tpl.id} className="bg-white rounded-xl shadow p-4 flex items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
+                      {tpl.code}
+                    </span>
                     <span className="font-medium text-gray-800">{tpl.name}</span>
                     {!tpl.active && (
                       <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">

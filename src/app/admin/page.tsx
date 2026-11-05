@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Doctor } from '@/lib/types';
+import { Doctor, DocTemplate } from '@/lib/types';
 import { FORMS } from '@/lib/form-definitions';
 
 const AVATARS = ['👩‍⚕️', '👨‍⚕️', '🩺', '🔬', '🏥', '💉', '🧬', '🫀', '🧠', '🦷'];
@@ -14,6 +14,10 @@ export default function AdminPage() {
   const [adding, setAdding] = useState(false);
   const [dbStatus, setDbStatus] = useState<string | null>(null);
 
+  // Fetched once here (not inside DoctorForm) so opening the edit dialog
+  // repeatedly doesn't re-fetch; assignable the same way F-forms are.
+  const [docTemplates, setDocTemplates] = useState<DocTemplate[]>([]);
+
   const loadDoctors = async () => {
     const res = await fetch('/api/doctors');
     const data = await res.json();
@@ -23,6 +27,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadDoctors();
+    fetch('/api/doc-templates?active=true')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setDocTemplates(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
 
   const handleInitDb = async () => {
@@ -136,6 +144,7 @@ export default function AdminPage() {
         {(editing || adding) && (
           <DoctorForm
             initial={editing ?? undefined}
+            docTemplates={docTemplates}
             onSave={handleSaveDoctor}
             onCancel={() => {
               setEditing(null);
@@ -150,10 +159,12 @@ export default function AdminPage() {
 
 function DoctorForm({
   initial,
+  docTemplates,
   onSave,
   onCancel,
 }: {
   initial?: Doctor;
+  docTemplates: DocTemplate[];
   onSave: (doc: Partial<Doctor>) => void;
   onCancel: () => void;
 }) {
@@ -167,7 +178,7 @@ function DoctorForm({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           {initial ? 'Rediģēt ārstu' : 'Jauns ārsts'}
         </h3>
@@ -220,6 +231,31 @@ function DoctorForm({
               ))}
             </div>
           </div>
+
+          {docTemplates.length > 0 && (
+            <div>
+              <label className="text-sm font-medium text-gray-600 block mb-2">
+                Dokumentu veidnes
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {docTemplates.map((tpl) => (
+                  <button
+                    key={tpl.code}
+                    onClick={() => toggleForm(tpl.code)}
+                    title={tpl.name}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition ${
+                      formIds.includes(tpl.code)
+                        ? 'bg-blue-50 border-blue-400 text-blue-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <span>📝</span>
+                    <span className="font-mono text-xs">{tpl.code}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 mt-6">

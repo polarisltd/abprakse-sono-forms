@@ -11,8 +11,9 @@ export default function DoctorPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Doctor | null>(null);
 
-  // Document templates are practice-wide (no per-doctor assignment in v1,
-  // unlike form_ids) — fetched once, shown to every doctor.
+  // All active document templates, fetched once; which ones a given doctor
+  // sees is filtered below by selected.form_ids, exactly like structured
+  // forms — a template's code ('T001', …) lives in the same array as 'F001'.
   const [docTemplates, setDocTemplates] = useState<DocTemplate[]>([]);
   const [pickerTemplate, setPickerTemplate] = useState<DocTemplate | null>(null);
   const [creatingDoc, setCreatingDoc] = useState(false);
@@ -117,7 +118,7 @@ export default function DoctorPage() {
 
             <h3 className="text-gray-600 mb-4 font-medium">Izvēlieties veidlapu:</h3>
 
-            {selected.form_ids.length === 0 && docTemplates.length === 0 ? (
+            {selected.form_ids.length === 0 ? (
               <p className="text-gray-400">Šim ārstam nav piešķirtu veidlapu.</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -135,7 +136,7 @@ export default function DoctorPage() {
                     />
                   );
                 })}
-                {docTemplates.map((tpl) => (
+                {docTemplates.filter((tpl) => selected.form_ids.includes(tpl.code)).map((tpl) => (
                   <button
                     key={`doc-${tpl.id}`}
                     onClick={() => setPickerTemplate(tpl)}

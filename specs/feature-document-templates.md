@@ -1,6 +1,6 @@
 # Feature: Rich-Text Document Templates (Brīvā teksta dokumentu veidnes)
 
-**Status:** design — not yet implemented
+**Status:** implemented — see §15 for what changed during build
 **Applies to:** a new form *type*, parallel to F001–F012, admin-authored rather than code-authored
 **Author:** design session 2026-11-04
 
@@ -182,6 +182,15 @@ recommended path once a template has real documents against it.
 `body_html` is sanitized server-side before every write (§6.4) — this is the
 one place admin-authored HTML becomes the seed for every document created
 from it, so a stored-XSS bug here would replicate app-wide.
+
+**`code`** (`'T001'`, `'T002'`, …) is not a column — every response computes
+it from `id` via `docTemplateCode()` (`src/lib/doc-templates.ts`), the same
+way `form_templates.slot` becomes `'T01'` via `slotCode()` in
+`src/lib/templates.ts` (§15.1 explains why these are two different `T`-ish
+schemes that don't collide: `doctors.form_ids` holds `'F0xx'` and `'T0xx'`
+strings, `form_templates`' bar codes are a UI-local concept scoped to one
+form and never stored in `form_ids` at all). This is what a doctor's
+`form_ids` holds to assign a document template explicitly — see §15.1.
 
 ### 4.2 `patients` — persistent roster (see §3.1 privacy note)
 
@@ -405,10 +414,12 @@ today and this doesn't introduce one.
 
 Today, `selected.form_ids` drives a grid of `StartFormButton` tiles sourced
 from the static `FORM_MAP`. This page additionally fetches
-`GET /api/doc-templates?active=true` and renders one tile per template,
-visually distinct (a document-style default icon, e.g. 📝, rather than a
-per-form emoji — admin can be given an icon picker later, out of scope here)
-and appended after the structured-form tiles.
+`GET /api/doc-templates?active=true` and renders one tile per template whose
+`code` (§4.1) appears in `selected.form_ids` — same assignment mechanism as
+F001–F012, not a separate one (§15.1). Tiles are visually distinct (a
+document-style default icon, e.g. 📝, rather than a per-form emoji — admin
+can be given an icon picker later, out of scope here) and appended after the
+structured-form tiles.
 
 Clicking a structured-form tile is unchanged (creates immediately, as
 today). Clicking a document tile opens the patient step (§9.2) instead of
@@ -602,10 +613,6 @@ into the template body would duplicate it.
 
 ## 14. Deferred / explicitly out of scope for v1
 
-- **Per-doctor template assignment** (mirroring `doctors.form_ids`) —
-  templates are practice-wide in v1, same as F001–F012's own template bar.
-  If doctors want their own curated subset, add a nullable join table later;
-  nothing in §4 blocks it.
 - **Patient roster editing/merge UI, delete, or dedup tooling** — v1 is
   search + create only (§6.3); correcting a typo means a `PUT` this spec
   doesn't build a screen for yet.
@@ -615,3 +622,59 @@ into the template body would duplicate it.
   inside the editor) — the editor is whole-document free text only, matching
   the original ask ("large screen text area doctor can fill as he wish").
 - Confirming the §3.1 privacy/compliance question before building §4.2.
+
+---
+
+## 15. Changes made during implementation
+
+Everything in §1–§14 was built as specified, plus one change made after an
+initial ship, once real use surfaced a gap §14 had deliberately deferred —
+recorded here so the spec matches the branch, same convention as
+feature-templates.md §12.
+
+### 15.1 Per-doctor template assignment, added
+
+§14's original "practice-wide, deferred" call turned out wrong in practice:
+every active template appeared for every doctor with no way to scope it,
+which is the same problem a F-form would have without `doctors.form_ids`.
+
+**Chosen: templates reuse `doctors.form_ids` directly**, by giving each
+`doc_templates` row a stable display id — `'T001'`, `'T002'`, … computed
+from `id` via `docTemplateCode()` (§4.1) — and letting that string sit in
+the exact same `TEXT[]` column as `'F001'`…`'F012'`. The admin doctor-edit
+dialog (`src/app/admin/page.tsx`) gained a second toggle grid, fetched once
+in `AdminPage` and passed down, right under the existing F-form grid, using
+the same `toggleForm` handler — assigning a document template is visually
+and mechanically identical to assigning a structured form. `/doctor` then
+filters `docTemplates` by `selected.form_ids.includes(tpl.code)` before
+rendering tiles (§9.1), replacing the unconditional "show every active
+template" behavior.
+
+**Rejected: a nullable join table** (`doctor_doc_templates`), the option §14
+had explicitly left open. Once a stable per-template code existed, reusing
+`form_ids` needed no schema change at all and kept doctor assignment a
+single concept with a single admin UI, rather than two parallel
+"which forms can this doctor see" mechanisms that would always need to be
+read together anyway.
+
+**Why `id`, not a `slot`-style allocation.** `form_templates.slot` is
+1–12 and reused (freed slots get re-allocated to the next save) because
+that table is a doctor-facing quick-save bar with a hard cap. `doc_templates`
+has no cap and nothing to free — admin creates a template once and it lives
+indefinitely — so the code is just the row's own permanent `id`, formatted.
+Deleting a template id `7` never risks a later template id `12` becoming
+`T007` and silently inheriting doctor assignments meant for the old one.
+
+**No collision with `form_templates`' own `'T01'`–`'T12'` codes.** Those are
+a different, UI-local concept — the quick-save bar's slot labels inside a
+single structured form (§1) — never written into `doctors.form_ids` and
+never seen outside that one form's template bar. The three-digit `T0xx`
+padding here (vs. two-digit `T0x` there) is a deliberate visual
+differentiator, not just a bigger number space.
+
+**Files touched beyond the original plan:** `src/lib/doc-templates.ts`
+(new — `docTemplateCode()`), `src/lib/types.ts` (`DocTemplate.code`),
+`src/app/api/doc-templates/route.ts` and `.../[id]/route.ts` (attach `code`
+to every response), `src/app/admin/page.tsx` (fetch templates, second
+toggle grid), `src/app/doctor/page.tsx` (filter by assignment),
+`src/app/admin/templates/page.tsx` (show the code in the list).

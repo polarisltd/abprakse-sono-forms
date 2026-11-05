@@ -89,6 +89,9 @@ export interface FormDef {
 export interface DocTemplate {
   id: number;
   name: string;
+  /** Display id derived server-side from `id` — 'T001', 'T002', … — the same
+   *  value a doctor's `form_ids` holds to assign this template explicitly. */
+  code: string;
   body_html: string;
   active: boolean;
   created_at: string;

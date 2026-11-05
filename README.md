@@ -114,8 +114,14 @@ authors named templates with a rich-text body at `/admin/templates` — bold,
 italic, four font sizes, nothing else. No code change or deploy is needed to
 add a new document type.
 
-On `/doctor`, each active template appears as its own tile (📝) alongside the
-structured forms. Starting one opens a patient search/create step — the
+Each template has a stable id — `T001`, `T002`, … — alongside F001–F012, and
+is only visible to a doctor it's explicitly assigned to: the admin
+doctor-edit screen (`/admin`) has a second toggle grid for document
+templates, right under the form grid, writing into the same `form_ids`
+array. A new template isn't assigned to anyone by default, same as a new
+structured form. On `/doctor`, each template assigned to the selected doctor
+appears as its own tile (📝) alongside the structured forms. Starting one
+opens a patient search/create step — the
 practice's **persistent patient roster** (`patients` table, not purged) —
 then copies the template's current body into a new, independently-editable
 document at `/document/[id]`. Editing, autosave, print/PDF and the midwife's
