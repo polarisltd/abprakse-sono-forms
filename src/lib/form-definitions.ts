@@ -7,6 +7,15 @@ export const PRACTICE = {
   mobile: '28641848',
 };
 
+/**
+ * Field ids that tell a doctor *which patient* this form is, as opposed to
+ * other header metadata (visit date, gestation week, …). Rendered larger on
+ * screen and in print so a mis-handed form is obvious at a glance — a
+ * display concern only, so it's its own set rather than overloading
+ * `common` (drives save routing) or `sensitive` (drives template exclusion).
+ */
+export const PATIENT_IDENTITY_FIELD_IDS = new Set(['patient_name', 'patient_birth_year', 'personas_kods']);
+
 const COMMON_HEADER_ROWS = [
   { fields: [{ id: 'patient_name', label: 'Vārds, uzvārds', type: 'text' as const, common: true }] },
   { fields: [{ id: 'patient_birth_year', label: 'Dzimšanas gads (dz. g.)', type: 'year' as const, common: true }] },

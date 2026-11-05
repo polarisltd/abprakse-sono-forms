@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FormDef, FormField, Statement } from '@/lib/types';
 import { commonFieldIds } from '@/lib/templates';
+import { PATIENT_IDENTITY_FIELD_IDS } from '@/lib/form-definitions';
 import TemplateBar, { TemplateBarHandle } from './TemplateBar';
+
+/**
+ * 50% over the default field size (text-lg, 18px — bumped one tier up from
+ * the original 14px/text-sm) — see PATIENT_IDENTITY_FIELD_IDS. Kept
+ * proportional to the default on purpose: if the default moves again, this
+ * should move with it or patient identity stops standing out.
+ */
+const PATIENT_ID_FONT_SIZE = '27px';
 
 interface Props {
   formDef: FormDef;
@@ -169,8 +178,10 @@ export default function FormRenderer({
     }
 
     const value = data[field.id] ?? '';
+    // text-lg (18px) — one tier up from the original 14px default; see
+    // PATIENT_ID_FONT_SIZE above for why that stays proportional to this.
     const baseInput =
-      'border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100';
+      'border border-gray-300 rounded px-2 py-1 text-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100';
 
     if (field.type === 'boolean') {
       return (
@@ -183,7 +194,7 @@ export default function FormRenderer({
             // Booleans have no blur — save immediately on change
             onChange={(e) => handleChange(field.id, e.target.checked, true)}
           />
-          <span className="text-sm text-gray-700">{field.label}</span>
+          <span className="text-lg text-gray-700">{field.label}</span>
         </label>
       );
     }
@@ -194,7 +205,7 @@ export default function FormRenderer({
       const next = current === options[0] ? options[1] : options[0];
       return (
         <span
-          className={`text-sm underline decoration-dotted decoration-gray-400 ${
+          className={`text-lg underline decoration-dotted decoration-gray-400 ${
             readOnly ? 'text-gray-700' : 'text-gray-900 cursor-pointer hover:decoration-gray-700'
           }`}
           onClick={() => !readOnly && handleChange(field.id, next, true)}
@@ -243,11 +254,14 @@ export default function FormRenderer({
           ? 'number'
           : 'text';
 
+    const isPatientId = PATIENT_IDENTITY_FIELD_IDS.has(field.id);
+
     return (
       <div className="flex items-center gap-1">
         <input
           type={inputType}
           className={`${baseInput} w-full`}
+          style={isPatientId ? { fontSize: PATIENT_ID_FONT_SIZE } : undefined}
           value={String(value)}
           min={field.min}
           max={field.max}
@@ -349,9 +363,13 @@ export default function FormRenderer({
                       </div>
                     );
                   }
+                  const isPatientId = PATIENT_IDENTITY_FIELD_IDS.has(field.id);
                   return (
-                    <div key={rowIdx} className="grid grid-cols-[180px_1fr] items-start gap-2">
-                      <label className="text-sm text-gray-600 pt-1.5 font-medium leading-tight">
+                    <div key={rowIdx} className="grid grid-cols-[210px_1fr] items-start gap-2">
+                      <label
+                        className="text-lg text-gray-600 pt-1.5 font-medium leading-tight"
+                        style={isPatientId ? { fontSize: PATIENT_ID_FONT_SIZE } : undefined}
+                      >
                         {field.label}
                       </label>
                       <div>{renderField(field)}</div>
@@ -369,8 +387,8 @@ export default function FormRenderer({
                   row.fields.slice(1).every((f) => !f.label)
                 ) {
                   return (
-                    <div key={rowIdx} className="grid grid-cols-[180px_1fr] items-start gap-2">
-                      <label className="text-sm text-gray-600 pt-1.5 font-medium leading-tight">
+                    <div key={rowIdx} className="grid grid-cols-[210px_1fr] items-start gap-2">
+                      <label className="text-lg text-gray-600 pt-1.5 font-medium leading-tight">
                         {row.fields[0].label}
                       </label>
                       <div className="flex items-center gap-2 flex-wrap pt-1.5">

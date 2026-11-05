@@ -21,6 +21,13 @@ const FONT_SIZES = [
 ];
 
 /**
+ * Ambient size for text that has no explicit per-span override — one tier up
+ * from the scale above ('Parasts' → 'Liels'), so a freshly-typed document
+ * reads larger by default rather than needing every line hand-sized.
+ */
+const DEFAULT_FONT_SIZE = '18px';
+
+/**
  * Bold/italic/font-size only. Every other StarterKit extension (headings,
  * lists, code, links, …) is switched off so pasted-in formatting is
  * normalized away rather than smuggled through — see
@@ -58,7 +65,8 @@ export default function RichTextEditor({ value, onChange, onBlur, readOnly = fal
     editorProps: {
       attributes: {
         class:
-          'min-h-[16rem] max-w-none border border-gray-300 rounded-b px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100',
+          'min-h-[16rem] max-w-none border border-gray-300 rounded-b px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100',
+        style: `font-size: ${DEFAULT_FONT_SIZE}`,
       },
     },
   });

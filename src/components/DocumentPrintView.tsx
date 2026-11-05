@@ -40,8 +40,11 @@ const DocumentPrintView = forwardRef<HTMLDivElement, Props>(({ statement }, ref)
         </div>
       </div>
 
-      <div className="flex justify-between mb-3 text-xs">
-        <div>
+      <div className="flex justify-between items-baseline mb-3 text-xs">
+        {/* 50% over the body's 14px default (bumped one tier up below) — same
+            reasoning as PATIENT_IDENTITY_FIELD_IDS on PrintView. Kept
+            proportional to that default on purpose. */}
+        <div style={{ fontSize: '21px' }}>
           Pacients:{' '}
           <span className="font-medium">
             {statement.patient_name || '—'}
@@ -51,8 +54,12 @@ const DocumentPrintView = forwardRef<HTMLDivElement, Props>(({ statement }, ref)
         <div>Datums: {statement.visit_date}</div>
       </div>
 
+      {/* Body defaults to 14px ('Parasts'), one tier up from the page's 12px
+          base — same "one level up" bump as the editor's DEFAULT_FONT_SIZE,
+          so what prints matches what the doctor saw while typing. */}
       <div
         className="rich-text-print [&_p]:my-1"
+        style={{ fontSize: '14px' }}
         dangerouslySetInnerHTML={{ __html: safeHtml }}
       />
 

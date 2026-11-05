@@ -2,7 +2,7 @@
 
 import { forwardRef } from 'react';
 import { FormDef, FormField } from '@/lib/types';
-import { PRACTICE } from '@/lib/form-definitions';
+import { PRACTICE, PATIENT_IDENTITY_FIELD_IDS } from '@/lib/form-definitions';
 import { Statement } from '@/lib/types';
 
 interface Props {
@@ -15,6 +15,13 @@ interface Props {
  * break the prose across the page.
  */
 const SINGLE_COLUMN_FORMS = new Set(['F005', 'F011', 'F012']);
+
+/**
+ * 50% over the field table's 14px default (bumped one tier up from the
+ * page's 12px/text-xs base — see the sections wrapper below) — see
+ * PATIENT_IDENTITY_FIELD_IDS. Kept proportional to that default on purpose.
+ */
+const PATIENT_ID_FONT_SIZE_PRINT = '21px';
 
 const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref) => {
   const data: Record<string, unknown> = {
@@ -55,8 +62,13 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
         </div>
       </div>
 
-      {/* Sections in 2-column layout (F005 prints single-column) */}
-      <div className={SINGLE_COLUMN_FORMS.has(formDef.id) ? 'columns-1' : 'columns-2 gap-4'}>
+      {/* Sections in 2-column layout (F005 prints single-column). Explicit
+          14px rather than inheriting the page's 12px (text-xs) — one tier
+          up, same bump as the on-screen form and the T-form print body. */}
+      <div
+        className={SINGLE_COLUMN_FORMS.has(formDef.id) ? 'columns-1' : 'columns-2 gap-4'}
+        style={{ fontSize: '14px' }}
+      >
         {formDef.sections.map((section) => {
           if (section.rows.length === 0 && section.note && !section.title) {
             return (
@@ -145,10 +157,16 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
                           </tr>
                         );
                       }
+                      const isPatientId = PATIENT_IDENTITY_FIELD_IDS.has(field.id);
+                      const idStyle = isPatientId ? { fontSize: PATIENT_ID_FONT_SIZE_PRINT } : undefined;
                       return (
                         <tr key={rowIdx}>
-                          <td className="font-medium pr-2 py-0.5 whitespace-nowrap w-1/3">{field.label}</td>
-                          <td className="py-0.5 border-b border-dotted border-gray-400">{renderValue(field)}</td>
+                          <td className="font-medium pr-2 py-0.5 whitespace-nowrap w-1/3" style={idStyle}>
+                            {field.label}
+                          </td>
+                          <td className="py-0.5 border-b border-dotted border-gray-400" style={idStyle}>
+                            {renderValue(field)}
+                          </td>
                         </tr>
                       );
                     }

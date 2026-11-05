@@ -72,7 +72,11 @@ export default function DocumentRenderer({ statement, readOnly = false, onSaved 
       <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 rounded-lg px-4 py-3">
         <div>
           <div className="text-xs text-gray-400">Pacients</div>
-          <div className="font-medium text-gray-800">
+          {/* 50% over the editor's 18px default (RichTextEditor's
+              DEFAULT_FONT_SIZE) — same reasoning as PATIENT_IDENTITY_FIELD_IDS
+              on the structured forms: a doctor needs to confirm the right
+              patient at a glance. Kept proportional on purpose. */}
+          <div className="font-medium text-gray-800" style={{ fontSize: '27px' }}>
             {statement.patient_name || '—'}
             {statement.patient_birth_year ? ` (${statement.patient_birth_year})` : ''}
           </div>
