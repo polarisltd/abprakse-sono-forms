@@ -310,26 +310,13 @@ Vercel CLI 59.16.0 (Node.js 24.10.0)
 
 ✓ Ready in 29s
 ```
-deployment 2026-09-14
+deployment 2026-11-02
 ```
 Nociceptors-MacBook-Air:abprakse-sono-forms robertsp$ vercel --prod
-Vercel CLI 59.16.0 (Node.js 24.10.0)
-  Inspect         https://vercel.com/polarisltd-6471s-projects/abprakse-sono-forms/2krj7fN1piFvzwFveswRDKMptgAS
-  Production      https://abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app
+Vercel CLI 65.2.0
+  Inspect         https://vercel.com/polarisltd-6471s-projects/abprakse-sono-forms/HLMJpt7gbQCHytT7xVGE84C4BkgG
+  Production      https://abprakse-sono-forms-60tuj4kty-polarisltd-6471s-projects.vercel.app
 ▲ Aliased         https://abprakse-sono-forms.vercel.app
-
-✓ Ready in 21s
-
-Next steps:
-- Automatically deploy changes on every push by connecting Git:
-  vercel git connect
-- Check the deployment response:
-  vercel curl https://abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app
-- View build logs:
-  vercel inspect abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app --logs
-- Create a new deployment from the same source:
-  vercel redeploy abprakse-sono-forms-6bjrymfuw-polarisltd-6471s-projects.vercel.app
-
 
 ```
 
