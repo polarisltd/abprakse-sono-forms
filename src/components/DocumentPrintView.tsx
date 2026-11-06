@@ -58,7 +58,7 @@ const DocumentPrintView = forwardRef<HTMLDivElement, Props>(({ statement }, ref)
           base — same "one level up" bump as the editor's DEFAULT_FONT_SIZE,
           so what prints matches what the doctor saw while typing. */}
       <div
-        className="rich-text-print [&_p]:my-1"
+        className="rich-text-print whitespace-pre-wrap [&_p]:my-1"
         style={{ fontSize: '14px' }}
         dangerouslySetInnerHTML={{ __html: safeHtml }}
       />

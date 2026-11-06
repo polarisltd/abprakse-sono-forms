@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Doctor, DocTemplate, Patient } from '@/lib/types';
+import { Doctor, DocTemplate, FormLabel, Patient } from '@/lib/types';
 import { FORM_MAP } from '@/lib/form-definitions';
 import PatientPicker from '@/components/PatientPicker';
 
@@ -18,6 +18,10 @@ export default function DoctorPage() {
   const [pickerTemplate, setPickerTemplate] = useState<DocTemplate | null>(null);
   const [creatingDoc, setCreatingDoc] = useState(false);
 
+  // Admin-chosen display names for F-forms (see /admin/form-labels); a form
+  // absent here just keeps its default title/subtitle.
+  const [formLabels, setFormLabels] = useState<Record<string, string>>({});
+
   useEffect(() => {
     fetch('/api/doctors')
       .then((r) => r.json())
@@ -30,6 +34,13 @@ export default function DoctorPage() {
     fetch('/api/doc-templates?active=true')
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setDocTemplates(Array.isArray(data) ? data : []))
+      .catch(() => {});
+
+    fetch('/api/form-labels')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: FormLabel[]) =>
+        setFormLabels(Object.fromEntries(data.map((d) => [d.form_id, d.label])))
+      )
       .catch(() => {});
   }, []);
 
@@ -125,14 +136,15 @@ export default function DoctorPage() {
                 {selected.form_ids.map((fid) => {
                   const form = FORM_MAP[fid];
                   if (!form) return null;
+                  const override = formLabels[fid]?.trim();
                   return (
                     <StartFormButton
                       key={fid}
                       doctorId={selected.id}
                       formId={fid}
                       avatar={form.avatar}
-                      title={form.title}
-                      subtitle={form.subtitle}
+                      title={override || form.title}
+                      subtitle={override ? undefined : form.subtitle}
                     />
                   );
                 })}
@@ -145,7 +157,7 @@ export default function DoctorPage() {
                     <span className="text-5xl">📝</span>
                     <div className="text-center">
                       <div className="font-medium text-gray-700 text-sm">{tpl.name}</div>
-                      <div className="text-xs text-blue-400 mt-1">Dokuments</div>
+                      <div className="text-xs text-blue-400 mt-1">{tpl.code}</div>
                     </div>
                   </button>
                 ))}

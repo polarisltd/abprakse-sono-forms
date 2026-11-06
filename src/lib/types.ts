@@ -98,6 +98,17 @@ export interface DocTemplate {
   updated_at: string;
 }
 
+/**
+ * Admin-chosen override for a structured form's (F00x) display name — picker
+ * and list UI only, never the printed statement. Absent for a form still
+ * showing its default title from form-definitions.ts.
+ */
+export interface FormLabel {
+  form_id: string;
+  label: string;
+  updated_at: string;
+}
+
 /** A roster entry, persistent (not purged with its statements). */
 export interface Patient {
   id: number;

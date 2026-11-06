@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Doctor, DocTemplate } from '@/lib/types';
-import { FORMS } from '@/lib/form-definitions';
+import { Doctor, DocTemplate, FormLabel } from '@/lib/types';
+import { FORMS, FORM_MAP, formDisplayName } from '@/lib/form-definitions';
 
 const AVATARS = ['👩‍⚕️', '👨‍⚕️', '🩺', '🔬', '🏥', '💉', '🧬', '🫀', '🧠', '🦷'];
 
@@ -18,6 +18,10 @@ export default function AdminPage() {
   // repeatedly doesn't re-fetch; assignable the same way F-forms are.
   const [docTemplates, setDocTemplates] = useState<DocTemplate[]>([]);
 
+  // Admin-chosen display names for F-forms, keyed by form_id — see
+  // /admin/form-labels. A form absent here just shows its default title.
+  const [formLabels, setFormLabels] = useState<Record<string, string>>({});
+
   const loadDoctors = async () => {
     const res = await fetch('/api/doctors');
     const data = await res.json();
@@ -30,6 +34,12 @@ export default function AdminPage() {
     fetch('/api/doc-templates?active=true')
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setDocTemplates(Array.isArray(data) ? data : []))
+      .catch(() => {});
+    fetch('/api/form-labels')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: FormLabel[]) =>
+        setFormLabels(Object.fromEntries(data.map((d) => [d.form_id, d.label])))
+      )
       .catch(() => {});
   }, []);
 
@@ -69,6 +79,12 @@ export default function AdminPage() {
           <h1 className="text-xl font-bold text-gray-800">⚙️ Administrēšana</h1>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/admin/form-labels"
+            className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+          >
+            🏷️ Veidlapu nosaukumi
+          </Link>
           <Link
             href="/admin/templates"
             className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
@@ -111,11 +127,25 @@ export default function AdminPage() {
                 <div className="flex-1">
                   <div className="font-medium text-gray-800">{doc.name}</div>
                   <div className="text-sm text-gray-500 flex flex-wrap gap-1 mt-1">
-                    {doc.form_ids.map((fid) => (
-                      <span key={fid} className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs">
-                        {fid}
-                      </span>
-                    ))}
+                    {doc.form_ids.map((fid) => {
+                      const form = FORM_MAP[fid];
+                      const tpl = docTemplates.find((t) => t.code === fid);
+                      const isTemplate = !form && !!tpl;
+                      return (
+                        <span
+                          key={fid}
+                          title={form ? formDisplayName(fid, formLabels) : tpl?.name ?? fid}
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono ${
+                            isTemplate
+                              ? 'bg-violet-50 text-violet-600'
+                              : 'bg-blue-50 text-blue-600'
+                          }`}
+                        >
+                          <span className="text-[11px]">{isTemplate ? '📝' : form?.avatar ?? '🩺'}</span>
+                          {fid}
+                        </span>
+                      );
+                    })}
                     {doc.form_ids.length === 0 && (
                       <span className="text-gray-300 text-xs">Nav veidlapu</span>
                     )}
@@ -145,6 +175,7 @@ export default function AdminPage() {
           <DoctorForm
             initial={editing ?? undefined}
             docTemplates={docTemplates}
+            formLabels={formLabels}
             onSave={handleSaveDoctor}
             onCancel={() => {
               setEditing(null);
@@ -160,11 +191,13 @@ export default function AdminPage() {
 function DoctorForm({
   initial,
   docTemplates,
+  formLabels,
   onSave,
   onCancel,
 }: {
   initial?: Doctor;
   docTemplates: DocTemplate[];
+  formLabels: Record<string, string>;
   onSave: (doc: Partial<Doctor>) => void;
   onCancel: () => void;
 }) {
@@ -178,7 +211,7 @@ function DoctorForm({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
           {initial ? 'Rediģēt ārstu' : 'Jauns ārsts'}
         </h3>
@@ -214,19 +247,27 @@ function DoctorForm({
 
           <div>
             <label className="text-sm font-medium text-gray-600 block mb-2">Veidlapas</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {FORMS.map((form) => (
                 <button
                   key={form.id}
                   onClick={() => toggleForm(form.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition ${
+                  title={formDisplayName(form.id, formLabels)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left transition ${
                     formIds.includes(form.id)
                       ? 'bg-blue-50 border-blue-400 text-blue-700'
                       : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <span>{form.avatar}</span>
-                  <span className="font-mono text-xs">{form.id}</span>
+                  <span className="shrink-0">{form.avatar}</span>
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[10px] text-gray-400 leading-none">
+                      {form.id}
+                    </span>
+                    <span className="block truncate leading-tight">
+                      {formDisplayName(form.id, formLabels)}
+                    </span>
+                  </span>
                 </button>
               ))}
             </div>
@@ -237,20 +278,25 @@ function DoctorForm({
               <label className="text-sm font-medium text-gray-600 block mb-2">
                 Dokumentu veidnes
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {docTemplates.map((tpl) => (
                   <button
                     key={tpl.code}
                     onClick={() => toggleForm(tpl.code)}
                     title={tpl.name}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left transition ${
                       formIds.includes(tpl.code)
                         ? 'bg-blue-50 border-blue-400 text-blue-700'
                         : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
-                    <span>📝</span>
-                    <span className="font-mono text-xs">{tpl.code}</span>
+                    <span className="shrink-0">📝</span>
+                    <span className="min-w-0">
+                      <span className="block font-mono text-[10px] text-gray-400 leading-none">
+                        {tpl.code}
+                      </span>
+                      <span className="block truncate leading-tight">{tpl.name}</span>
+                    </span>
                   </button>
                 ))}
               </div>

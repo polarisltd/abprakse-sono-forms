@@ -1378,3 +1378,18 @@ export const FORMS: FormDef[] = [
 ];
 
 export const FORM_MAP = Object.fromEntries(FORMS.map((f) => [f.id, f]));
+
+/**
+ * The name to show for a form in a picker/list: the admin's custom label for
+ * `formId` if one is set in `overrides` (keyed by form_id, e.g. from
+ * `/api/form-labels`), otherwise the form's default title (+ subtitle, since
+ * several forms share a title and differ only there — F007/F008, F005/F012).
+ * UI-only — the printed statement always uses the form's own title/subtitle.
+ */
+export function formDisplayName(formId: string, overrides: Record<string, string>): string {
+  const override = overrides[formId]?.trim();
+  if (override) return override;
+  const form = FORM_MAP[formId];
+  if (!form) return formId;
+  return form.subtitle ? `${form.title} — ${form.subtitle}` : form.title;
+}

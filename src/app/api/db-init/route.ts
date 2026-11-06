@@ -62,6 +62,17 @@ export async function POST() {
       )
     `;
 
+    // Admin-chosen display name override for a structured form (F00x), used
+    // only in pickers/lists — the printed statement always keeps the form's
+    // regulated title from form-definitions.ts.
+    await sql`
+      CREATE TABLE IF NOT EXISTS form_labels (
+        form_id VARCHAR(5) PRIMARY KEY,
+        label VARCHAR(100) NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
     await sql`
       CREATE TABLE IF NOT EXISTS patients (
         id SERIAL PRIMARY KEY,

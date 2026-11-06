@@ -60,12 +60,18 @@ export default function RichTextEditor({ value, onChange, onBlur, readOnly = fal
       }),
     ],
     content: value,
+    // Without this, ProseMirror's HTML parser collapses runs of spaces and
+    // strips leading/trailing whitespace the way a browser renders them —
+    // so an indented line typed here survives on screen (contenteditable
+    // preserves it visually) but is silently lost the next time this
+    // template is reopened and re-parsed from its saved HTML.
+    parseOptions: { preserveWhitespace: 'full' },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     onBlur: () => onBlur?.(),
     editorProps: {
       attributes: {
         class:
-          'min-h-[16rem] max-w-none border border-gray-300 rounded-b px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100',
+          'min-h-[16rem] max-w-none border border-gray-300 rounded-b px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 whitespace-pre-wrap',
         style: `font-size: ${DEFAULT_FONT_SIZE}`,
       },
     },
@@ -79,7 +85,10 @@ export default function RichTextEditor({ value, onChange, onBlur, readOnly = fal
   useEffect(() => {
     if (!editor) return;
     if (!editor.isFocused && value !== editor.getHTML()) {
-      editor.commands.setContent(value, { emitUpdate: false });
+      editor.commands.setContent(value, {
+        emitUpdate: false,
+        parseOptions: { preserveWhitespace: 'full' },
+      });
     }
   }, [value, editor]);
 
