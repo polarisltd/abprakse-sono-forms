@@ -15,6 +15,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* A blank line typed in the RichTextEditor is saved as an empty <p></p>. The
+   editor keeps it one line tall with a placeholder <br> that never reaches the
+   saved HTML, so on the printed document it would collapse to nothing. */
+.rich-text-print p:empty::before {
+  content: '\00a0';
+}
+
 /* Print styles */
 @media print {
   body {
