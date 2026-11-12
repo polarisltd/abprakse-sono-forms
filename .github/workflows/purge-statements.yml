@@ -18,10 +18,14 @@ name: Purge expired form data
 # Note: GitHub's schedule is best-effort (it can slip a few minutes under
 # load), which is fine here since the retention window is 12 hours.
 
+#
+# DISABLED (2026-11-12): the hourly schedule is switched off, so statement
+# rows are no longer removed automatically. To turn it back on, restore:
+#   schedule:
+#     - cron: '5 * * * *' # hourly, at :05
+
 on:
-  schedule:
-    - cron: '5 * * * *' # hourly, at :05
-  workflow_dispatch: {} # allows manual "Run workflow" from the Actions tab
+  workflow_dispatch: {} # manual "Run workflow" from the Actions tab only
 
 jobs:
   purge:

@@ -218,6 +218,13 @@ fails and is retried against the next free one.
 
 ## Data retention
 
+> **Scheduled purge is currently disabled (since 2026-11-12).** The hourly
+> trigger in `.github/workflows/purge-statements.yml` is switched off, so
+> `statements` rows are kept until someone removes them by hand — the purge
+> endpoint and the workflow's manual "Run workflow" button both still work.
+> The rest of this section describes the purge as it behaves when the
+> schedule is on; restore the `schedule:` block in the workflow to re-enable.
+
 Form data (the `statements` table — patient visits and their `form_data`,
 and now also rich-text documents' `body_html`) is temporary: any row older
 than **12 hours** (by `created_at`) is deleted automatically. Everything else
