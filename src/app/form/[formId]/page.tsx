@@ -124,6 +124,9 @@ export default function FormPage() {
     visit_date: statement.visit_date ?? new Date().toISOString().slice(0, 10),
   };
 
+  // Back to the doctor's own area (forms + unfinished visits), not the doctor picker.
+  const doctorHref = statement.doctor_id != null ? `/doctor?doctor=${statement.doctor_id}` : '/doctor';
+
   if (done) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6">
@@ -138,7 +141,7 @@ export default function FormPage() {
             🖨 Drukāt / PDF
           </button>
           <Link
-            href="/doctor"
+            href={doctorHref}
             className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
           >
             Jauna veidlapa
@@ -160,7 +163,7 @@ export default function FormPage() {
         className="no-print bg-white border-b shadow-sm sticky top-0 z-10 px-4 py-3 flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <Link href="/doctor" className="text-blue-500 hover:underline text-sm">
+          <Link href={doctorHref} className="text-blue-500 hover:underline text-sm">
             ← Atpakaļ
           </Link>
           <span className="text-lg">{formDef.avatar}</span>

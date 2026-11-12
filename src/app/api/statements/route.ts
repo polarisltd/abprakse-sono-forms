@@ -33,6 +33,26 @@ export async function GET(request: NextRequest) {
   const sql = getDb();
 
   try {
+    // A doctor's unfinished visits, across all dates — the grid in the
+    // doctor's area, where a nurse-prepared visit waits until someone
+    // completes it.
+    const doctorParam = searchParams.get('doctor_id');
+    if (doctorParam != null) {
+      const doctorId = Number(doctorParam);
+      if (!Number.isInteger(doctorId)) {
+        return NextResponse.json({ error: 'Invalid doctor_id' }, { status: 400 });
+      }
+      const rows = await sql`
+        SELECT ${sql.unsafe(SELECT_COLUMNS)}
+        FROM statements s
+        LEFT JOIN doctors d ON d.id = s.doctor_id
+        LEFT JOIN patients p ON p.id = s.patient_id
+        WHERE s.doctor_id = ${doctorId} AND NOT s.is_complete
+        ORDER BY s.created_at DESC
+      `;
+      return NextResponse.json(rows);
+    }
+
     const rows = await sql`
       SELECT ${sql.unsafe(SELECT_COLUMNS)}
       FROM statements s

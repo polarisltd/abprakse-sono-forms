@@ -81,3 +81,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+// Discards a visit opened by mistake. Only an unfinished visit can go — a
+// completed one is a finished record and is refused here, whatever the UI shows.
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const sql = getDb();
+  try {
+    const deleted = await sql`
+      DELETE FROM statements WHERE id = ${id} AND NOT is_complete RETURNING id
+    `;
+    if (deleted.length) return NextResponse.json({ ok: true });
+
+    const existing = await sql`SELECT id FROM statements WHERE id = ${id}`;
+    if (!existing.length) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Completed visits cannot be deleted' }, { status: 409 });
+  } catch (err) {
+    console.error('DELETE /api/statements/[id] error:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

@@ -72,6 +72,9 @@ export default function DocumentPage() {
     );
   }
 
+  // Back to the doctor's own area (forms + unfinished visits), not the doctor picker.
+  const doctorHref = statement.doctor_id != null ? `/doctor?doctor=${statement.doctor_id}` : '/doctor';
+
   if (done) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6">
@@ -86,7 +89,7 @@ export default function DocumentPage() {
             🖨 Drukāt / PDF
           </button>
           <Link
-            href="/doctor"
+            href={doctorHref}
             className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
           >
             Jauns dokuments
@@ -103,7 +106,7 @@ export default function DocumentPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="no-print bg-white border-b shadow-sm sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/doctor" className="text-blue-500 hover:underline text-sm">
+          <Link href={doctorHref} className="text-blue-500 hover:underline text-sm">
             ← Atpakaļ
           </Link>
           <span className="text-lg">📝</span>

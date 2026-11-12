@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Doctor, DocTemplate, FormLabel, Patient } from '@/lib/types';
+import { Doctor, DocTemplate, FormLabel, Patient, Statement } from '@/lib/types';
 import { FORM_MAP } from '@/lib/form-definitions';
 import PatientPicker from '@/components/PatientPicker';
 
@@ -22,11 +22,68 @@ export default function DoctorPage() {
   // absent here just keeps its default title/subtitle.
   const [formLabels, setFormLabels] = useState<Record<string, string>>({});
 
+  // The selected doctor's unfinished visits (any date) — prepared by a nurse
+  // or left open by the doctor; a visit drops off once it is completed.
+  const [pending, setPending] = useState<Statement[]>([]);
+
+  // The selected doctor is mirrored in the URL (?doctor=ID) so the form's
+  // "← Atpakaļ" link and a page reload land back in this doctor's area.
+  const selectDoctor = (doc: Doctor | null) => {
+    setSelected(doc);
+    setPending([]);
+    window.history.replaceState(null, '', doc ? `/doctor?doctor=${doc.id}` : '/doctor');
+  };
+
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const handleDelete = async (s: Statement) => {
+    const who = s.patient_name ? `, ${s.patient_name}` : '';
+    if (!window.confirm(`Dzēst apmeklējumu Nr. ${s.doc_id}${who}? Ievadītie dati tiks neatgriezeniski dzēsti.`)) {
+      return;
+    }
+    setDeletingId(s.id);
+    try {
+      const res = await fetch(`/api/statements/${s.id}`, { method: 'DELETE' });
+      // 404/409: already deleted or completed elsewhere — gone from this grid either way.
+      if (res.ok || res.status === 404 || res.status === 409) {
+        setPending((list) => list.filter((x) => x.id !== s.id));
+      } else {
+        window.alert('Neizdevās dzēst apmeklējumu.');
+      }
+    } catch {
+      window.alert('Neizdevās dzēst apmeklējumu.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const selectedId = selected?.id;
+  useEffect(() => {
+    if (selectedId == null) return;
+    let cancelled = false;
+    const load = () =>
+      fetch(`/api/statements?doctor_id=${selectedId}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => {
+          if (!cancelled) setPending(Array.isArray(data) ? data : []);
+        })
+        .catch(() => {}); // keep whatever is shown; the next poll retries
+    load();
+    const interval = setInterval(load, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [selectedId]);
+
   useEffect(() => {
     fetch('/api/doctors')
       .then((r) => r.json())
       .then((data) => {
-        setDoctors(Array.isArray(data) ? data : []);
+        const list: Doctor[] = Array.isArray(data) ? data : [];
+        setDoctors(list);
+        const fromUrl = Number(new URLSearchParams(window.location.search).get('doctor'));
+        const preselected = list.find((d) => d.id === fromUrl);
+        if (preselected) setSelected(preselected);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -99,7 +156,7 @@ export default function DoctorPage() {
                 {doctors.map((doc) => (
                   <button
                     key={doc.id}
-                    onClick={() => setSelected(doc)}
+                    onClick={() => selectDoctor(doc)}
                     className="flex flex-col items-center gap-3 bg-white rounded-2xl shadow p-6 hover:shadow-md hover:-translate-y-0.5 transition-all border border-transparent hover:border-blue-200"
                   >
                     <span className="text-5xl">{doc.avatar}</span>
@@ -116,7 +173,7 @@ export default function DoctorPage() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <button
-                onClick={() => setSelected(null)}
+                onClick={() => selectDoctor(null)}
                 className="text-blue-500 hover:underline text-sm"
               >
                 ← Mainīt ārstu
@@ -161,6 +218,70 @@ export default function DoctorPage() {
                     </div>
                   </button>
                 ))}
+              </div>
+            )}
+
+            <h3 className="text-gray-600 mt-10 mb-4 font-medium">
+              Nepabeigtie apmeklējumi{pending.length > 0 ? ` (${pending.length})` : ''}:
+            </h3>
+
+            {pending.length === 0 ? (
+              <p className="text-gray-400">Nav nepabeigtu apmeklējumu.</p>
+            ) : (
+              <div className="bg-white rounded-xl shadow overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-gray-600 font-medium w-24">Nr.</th>
+                      <th className="text-left px-4 py-3 text-gray-600 font-medium">Pacients</th>
+                      <th className="text-left px-4 py-3 text-gray-600 font-medium">Dz. g.</th>
+                      <th className="text-left px-4 py-3 text-gray-600 font-medium">Veidlapa</th>
+                      <th className="text-left px-4 py-3 text-gray-600 font-medium">Datums</th>
+                      <th className="text-right px-4 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {pending.map((s) => {
+                      const isDocument = s.template_id != null;
+                      const form = s.form_id ? FORM_MAP[s.form_id] : null;
+                      const formName = isDocument
+                        ? s.template_name
+                        : (s.form_id && formLabels[s.form_id]?.trim()) || form?.title || s.form_id;
+                      const [y, m, d] = s.visit_date.split('-');
+                      return (
+                        <tr key={s.id} className="hover:bg-gray-50 transition">
+                          <td className="px-4 py-3 font-mono text-gray-500">{s.doc_id}</td>
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            {s.patient_name || <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">{s.patient_birth_year || '—'}</td>
+                          <td className="px-4 py-3">
+                            <span className="flex items-center gap-1.5">
+                              <span>{isDocument ? '📝' : (form?.avatar ?? '📄')}</span>
+                              <span className="text-gray-700">{formName}</span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">{`${d}.${m}.${y}`}</td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <Link
+                              href={isDocument ? `/document/${s.id}` : `/form/${s.form_id}?id=${s.id}`}
+                              className="text-xs text-blue-600 hover:underline px-2 py-1 rounded hover:bg-blue-50"
+                            >
+                              ✏️ Labot
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(s)}
+                              disabled={deletingId === s.id}
+                              className="text-xs text-red-600 hover:underline px-2 py-1 rounded hover:bg-red-50 disabled:opacity-50"
+                            >
+                              🗑 Dzēst
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
