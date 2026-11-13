@@ -8,6 +8,7 @@ import {
   slotCode,
 } from '@/lib/templates';
 import { FormTemplate } from '@/lib/types';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,9 @@ function withCode(row: TemplateRow): FormTemplate {
 }
 
 export async function GET(request: NextRequest) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { searchParams } = new URL(request.url);
   const formId = searchParams.get('form_id');
 
@@ -48,6 +52,9 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const sql = getDb();
   try {
     const body = await request.json();

@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { ensureAuthTables } from '@/lib/auth/attempts';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   try {
     const sql = getDb();
 
@@ -114,6 +119,9 @@ export async function POST() {
     await sql`
       CREATE INDEX IF NOT EXISTS idx_patients_name ON patients (lower(name))
     `;
+
+    // Login attempt counters — also created on first login, see attempts.ts.
+    await ensureAuthTables(sql);
 
     const existing = await sql`SELECT COUNT(*) AS count FROM doctors`;
     if (Number(existing[0].count) === 0) {

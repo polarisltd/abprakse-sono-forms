@@ -242,8 +242,11 @@ The purge itself lives at `POST /api/cron/purge-statements`
 (`src/app/api/cron/purge-statements/route.ts`). It's guarded by a
 `CRON_SECRET`: set it as an environment variable on the Vercel project
 (Settings → Environment Variables) and the route only accepts calls whose
-`Authorization` header is `Bearer <CRON_SECRET>`. If it's left unset (e.g.
-local dev), the route allows unauthenticated calls so it's easy to test.
+`Authorization` header is `Bearer <CRON_SECRET>`. If it's left unset, the
+route allows unauthenticated calls on a local dev server only (so it's easy to
+test); in production an unset secret means every call is refused. This is the
+one data route that is reachable without a login session — see **Access
+protection** below.
 
 **Scheduling:** Vercel's Hobby (free) plan only allows *daily* Cron Jobs, so
 an hourly schedule can't be defined via `vercel.json` without upgrading to
@@ -274,6 +277,74 @@ curl -X POST -H "Authorization: Bearer <CRON_SECRET>" \
 If a paid Vercel plan becomes available later, this can move back to a
 native Vercel Cron Job — just add a `vercel.json` with a `crons` entry
 pointing at the same path and drop the GitHub Actions workflow.
+
+## Access protection
+
+The whole app sits behind a login: without a valid session nothing but
+`/login` is reachable — no page and no `/api/*` route.
+
+**How staff log in.** The login screen asks for a 6-digit code from an
+authenticator app (Microsoft Authenticator, Google Authenticator, or any other
+TOTP app). The practice shares **one** authenticator key; every phone or PC
+that should be able to log in is enrolled with the same QR code. There are no
+personal accounts and the app does not record who changed what — the login
+only keeps outsiders out. A browser stays logged in for **12 hours**, then
+asks for a code again. "Iziet" on the start page logs out.
+
+**How it's enforced.**
+
+- `src/proxy.ts` checks the session cookie before every page and API route.
+- Every data route also calls `requireSession()` (`src/lib/auth/guard.ts`)
+  itself, so the API stays closed even if the proxy were bypassed.
+- The session is a signed cookie (`src/lib/auth/session.ts`): `HttpOnly`,
+  `Secure`, `SameSite=Lax`, valid 12 h. It is stateless; changing
+  `SESSION_SECRET` logs everyone out at once.
+- Codes are standard TOTP (`src/lib/auth/totp.ts`: RFC 6238, SHA-1, 6 digits,
+  30 s). The current and the previous code are accepted; a code that was
+  already used is refused.
+- **Attempt limit** (`src/lib/auth/attempts.ts`) — this is what makes a
+  6-digit code safe to rely on: 5 wrong codes per address per 15 minutes, and
+  10 wrong codes per hour overall. When the limit is hit the login screen says
+  how long to wait. A burst of wrong codes from outside therefore blocks *new*
+  logins for up to an hour; browsers already logged in keep working. If staff
+  ever see "Pārāk daudz nepareizu mēģinājumu" without having mistyped, someone
+  is guessing — that is the signal to consider adding a password as well.
+- The one exception is `POST /api/cron/purge-statements`, which has no browser
+  cookie and is protected by `CRON_SECRET` instead.
+
+**Environment variables**
+
+| Variable | What it is |
+|---|---|
+| `TOTP_SECRET` | The authenticator key (base32). Anyone who has it can log in. |
+| `SESSION_SECRET` | Random key that signs the session cookie (64 hex chars). |
+
+In production **both must be set** — if either is missing the site answers
+`503` for everyone rather than running unprotected. On a local dev server with
+both left empty there is no login.
+
+**First-time setup** (order matters — deploying before step 3 locks the site):
+
+1. Run `node dev/auth-setup.js` in your own terminal. It prints a QR code and
+   the two variables. Nothing is saved or sent anywhere.
+2. Scan the QR code with the authenticator app on every phone that should be
+   able to log in. Store `TOTP_SECRET` somewhere safe (a password manager).
+3. Add `TOTP_SECRET` and `SESSION_SECRET` to the Vercel project (Settings →
+   Environment Variables → Production). Check `CRON_SECRET` is set there too.
+4. Deploy. The two database tables the attempt limit uses are created
+   automatically on the first login.
+
+**Later**
+
+- *Enrol another phone:* `TOTP_SECRET=<the key> node dev/auth-setup.js --show`
+  prints the QR code again.
+- *A phone is lost, or someone leaves:* run `node dev/auth-setup.js` again,
+  replace both variables in Vercel, redeploy, and re-scan on the remaining
+  phones. The old key stops working immediately.
+- *Log everyone out now:* change `SESSION_SECRET` and redeploy.
+
+`npm run test:auth` checks the code generator against the RFC 6238 test
+vectors and the session cookie against tampering and expiry.
 
 ## Deploy
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sanitizeRichText } from '@/lib/sanitize-html';
 import { docTemplateCode } from '@/lib/doc-templates';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,9 @@ type Row = { id: number; name: string; body_html: string; active: boolean };
 const withCode = <T extends Row>(row: T) => ({ ...row, code: docTemplateCode(row.id) });
 
 export async function GET(request: NextRequest) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { searchParams } = new URL(request.url);
   const activeOnly = searchParams.get('active') === 'true';
   const sql = getDb();
@@ -34,6 +38,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const sql = getDb();
   try {
     const body = await request.json();

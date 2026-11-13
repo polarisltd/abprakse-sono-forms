@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sanitizeRichText } from '@/lib/sanitize-html';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { id } = await params;
   const sql = getDb();
   try {
@@ -30,6 +34,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { id } = await params;
   const sql = getDb();
   try {
@@ -87,6 +94,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 // Discards a visit opened by mistake. Only an unfinished visit can go — a
 // completed one is a finished record and is refused here, whatever the UI shows.
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { id } = await params;
   const sql = getDb();
   try {

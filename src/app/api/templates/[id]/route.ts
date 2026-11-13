@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { normalizeLabel, sanitizeTemplateData, slotCode } from '@/lib/templates';
 import { FormTemplate } from '@/lib/types';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,9 @@ function withCode(row: TemplateRow): FormTemplate {
  * real loss; `updated_at` comes back so the UI can show when it last changed.
  */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { id } = await params;
   const sql = getDb();
   try {
@@ -64,6 +68,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
  * on the next free one — no reservation, no tombstone table.
  */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { id } = await params;
   const sql = getDb();
   try {

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { FORM_MAP } from '@/lib/form-definitions';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ formId: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { formId } = await params;
   if (!FORM_MAP[formId]) {
     return NextResponse.json({ error: 'Unknown form_id' }, { status: 404 });
@@ -33,6 +37,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ formId: string }> }) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const { formId } = await params;
   const sql = getDb();
   try {

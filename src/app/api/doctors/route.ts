@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { normalizeDoctorTitle } from '@/lib/doctor-title';
+import { requireSession } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const sql = getDb();
   try {
     const rows = await sql`
@@ -20,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireSession();
+  if (denied) return denied;
+
   const sql = getDb();
   try {
     const { name, title, avatar, form_ids } = await request.json();

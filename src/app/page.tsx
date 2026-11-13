@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { PRACTICE } from '@/lib/form-definitions';
+import { getAuthConfig } from '@/lib/auth/config';
+import LogoutButton from '@/components/LogoutButton';
+
+// Rendered per request so the "Iziet" link reflects the running server's
+// configuration rather than whatever was set at build time.
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
+  const authOn = getAuthConfig().mode === 'on';
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-8">
       <div className="text-center mb-10">
@@ -32,10 +39,11 @@ export default function Home() {
         </Link>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 flex items-center gap-6">
         <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600 underline">
           Administrēšana
         </Link>
+        {authOn && <LogoutButton />}
       </div>
     </main>
   );

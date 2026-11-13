@@ -9,9 +9,10 @@ const RETENTION_HOURS = 12;
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  // If no secret is configured, don't block local/dev testing — but this
-  // should always be set in production (see README).
-  if (!secret) return true;
+  // This route is reachable without a login session (GitHub Actions has no
+  // cookie), so the secret is its only protection: without one configured it
+  // is open only on a local dev server, never in production.
+  if (!secret) return process.env.NODE_ENV !== 'production';
 
   const authHeader = request.headers.get('authorization');
   return authHeader === `Bearer ${secret}`;
