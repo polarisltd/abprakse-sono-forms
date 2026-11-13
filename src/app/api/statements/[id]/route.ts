@@ -12,6 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       SELECT
         s.id, s.doc_id, s.form_id, s.visit_date::text, s.doctor_id,
         d.name AS doctor_name,
+        d.title AS doctor_title,
         COALESCE(s.patient_name, p.name) AS patient_name,
         COALESCE(s.patient_birth_year, p.birth_year) AS patient_birth_year,
         s.form_data, s.is_complete, s.created_at::text, s.updated_at::text,
@@ -66,6 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       SELECT
         s.id, s.doc_id, s.form_id, s.visit_date::text, s.doctor_id,
         d.name AS doctor_name,
+        d.title AS doctor_title,
         COALESCE(s.patient_name, p.name) AS patient_name,
         COALESCE(s.patient_birth_year, p.birth_year) AS patient_birth_year,
         s.form_data, s.is_complete, s.created_at::text, s.updated_at::text,

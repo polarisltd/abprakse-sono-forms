@@ -1,6 +1,8 @@
 export interface Doctor {
   id: number;
   name: string;
+  /** Shown before the name on printed documents, e.g. 'Pediatrs'. Never empty — defaults to 'Ārsts'. */
+  title: string;
   avatar: string;
   form_ids: string[];
   active: boolean;
@@ -15,6 +17,8 @@ export interface Statement {
   visit_date: string;
   doctor_id: number | null;
   doctor_name?: string;
+  /** The doctor's current title (doctors.title), resolved by the same join as doctor_name. */
+  doctor_title?: string;
   patient_name: string | null;
   patient_birth_year: number | null;
   form_data: Record<string, unknown>;

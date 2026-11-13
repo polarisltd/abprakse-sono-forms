@@ -147,6 +147,7 @@ Design notes, data model, API contract and the six seed templates:
 CREATE TABLE doctors (
   id          SERIAL PRIMARY KEY,
   name        VARCHAR(255) NOT NULL,
+  title       VARCHAR(100) NOT NULL DEFAULT 'Ārsts', -- printed before the name, e.g. 'Pediatrs'
   avatar      VARCHAR(10)  NOT NULL DEFAULT '👤',
   form_ids    TEXT[]       NOT NULL DEFAULT '{}',
   active      BOOLEAN      NOT NULL DEFAULT true,

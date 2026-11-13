@@ -232,7 +232,7 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
         </div>
         {statement.doctor_name && (
           <div className="text-right text-gray-500">
-            Ārsts: {statement.doctor_name}
+            {statement.doctor_title || 'Ārsts'}: {statement.doctor_name}
           </div>
         )}
       </div>

@@ -11,12 +11,17 @@ export async function POST() {
       CREATE TABLE IF NOT EXISTS doctors (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        title VARCHAR(100) NOT NULL DEFAULT 'Ārsts',
         avatar VARCHAR(10) NOT NULL DEFAULT '👤',
         form_ids TEXT[] NOT NULL DEFAULT '{}',
         active BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+
+    // Shown before the doctor's name on printed documents ('Pediatrs: …').
+    // NOT NULL with a default so a doctor never prints with an empty title.
+    await sql`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS title VARCHAR(100) NOT NULL DEFAULT 'Ārsts'`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS statements (

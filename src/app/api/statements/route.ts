@@ -15,6 +15,7 @@ const SELECT_COLUMNS = `
   s.visit_date::text,
   s.doctor_id,
   d.name AS doctor_name,
+  d.title AS doctor_title,
   COALESCE(s.patient_name, p.name) AS patient_name,
   COALESCE(s.patient_birth_year, p.birth_year) AS patient_birth_year,
   s.form_data,
