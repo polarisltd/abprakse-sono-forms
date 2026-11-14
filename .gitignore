@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 
 # template sanitiser check build output
 .test-build
+
+.auth-info.md
