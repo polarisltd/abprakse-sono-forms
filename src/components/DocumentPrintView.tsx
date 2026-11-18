@@ -45,11 +45,16 @@ const DocumentPrintView = forwardRef<HTMLDivElement, Props>(({ statement }, ref)
             reasoning as PATIENT_IDENTITY_FIELD_IDS on PrintView. Kept
             proportional to that default on purpose. */}
         <div style={{ fontSize: '21px' }}>
-          Pacients:{' '}
-          <span className="font-medium">
-            {statement.patient_name || '—'}
-            {statement.patient_birth_year ? `, dz.g. ${statement.patient_birth_year}` : ''}
-          </span>
+          <div>
+            Pacients:{' '}
+            <span className="font-medium">
+              {statement.patient_name || '—'}
+              {statement.patient_birth_year ? `, dz.g. ${statement.patient_birth_year}` : ''}
+            </span>
+          </div>
+          <div>
+            Personas kods: <span className="font-medium">{statement.patient_personal_code || '—'}</span>
+          </div>
         </div>
         <div>Datums: {statement.visit_date}</div>
       </div>
@@ -66,7 +71,6 @@ const DocumentPrintView = forwardRef<HTMLDivElement, Props>(({ statement }, ref)
       <div className="mt-4 pt-3 border-t border-black flex justify-between">
         <div>
           <div className="mb-6">Ārsts (paraksts, spiedogs): _____________________</div>
-          <div>Datums: {statement.visit_date}</div>
         </div>
         {statement.doctor_name && (
           <div className="text-right text-gray-500">{statement.doctor_title || 'Ārsts'}: {statement.doctor_name}</div>

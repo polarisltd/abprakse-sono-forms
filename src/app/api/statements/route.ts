@@ -19,6 +19,7 @@ const SELECT_COLUMNS = `
   d.title AS doctor_title,
   COALESCE(s.patient_name, p.name) AS patient_name,
   COALESCE(s.patient_birth_year, p.birth_year) AS patient_birth_year,
+  COALESCE(s.patient_personal_code, p.personal_code) AS patient_personal_code,
   s.form_data,
   s.is_complete,
   s.created_at::text,
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
       RETURNING
         id, doc_id, form_id, visit_date::text, doctor_id, patient_name, patient_birth_year,
         form_data, is_complete, created_at::text, updated_at::text,
-        template_id, template_name, body_html, patient_id
+        template_id, template_name, body_html, patient_id, patient_personal_code
     `;
 
     return NextResponse.json(rows[0], { status: 201 });

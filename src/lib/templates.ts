@@ -22,7 +22,7 @@ export function formFields(formId: string): FormField[] {
  * the three column-backed ids so a definition that forgets the flag still can't
  * leak patient data into a permanent row.
  */
-const COLUMN_BACKED_COMMON_IDS = ['patient_name', 'patient_birth_year', 'visit_date'];
+const COLUMN_BACKED_COMMON_IDS = ['patient_name', 'patient_birth_year', 'patient_personal_code', 'visit_date'];
 
 export function commonFieldIds(formId: string): Set<string> {
   const ids = new Set(COLUMN_BACKED_COMMON_IDS);

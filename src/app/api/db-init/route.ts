@@ -104,6 +104,18 @@ export async function POST() {
     await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS body_html TEXT`;
     await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS patient_id INTEGER REFERENCES patients(id) ON DELETE SET NULL`;
 
+    // 'Personas kods' on F00x forms: a visit-level column like patient_name,
+    // so it is never written into a template. Before this column existed it
+    // lived in form_data.personas_kods (F005/F012) — copy those values across
+    // once; the WHERE keeps the backfill from touching rows already set.
+    await sql`ALTER TABLE statements ADD COLUMN IF NOT EXISTS patient_personal_code VARCHAR(32)`;
+    await sql`
+      UPDATE statements
+      SET patient_personal_code = form_data->>'personas_kods'
+      WHERE patient_personal_code IS NULL
+        AND NULLIF(form_data->>'personas_kods', '') IS NOT NULL
+    `;
+
     await sql`
       CREATE INDEX IF NOT EXISTS idx_statements_visit_date ON statements(visit_date)
     `;

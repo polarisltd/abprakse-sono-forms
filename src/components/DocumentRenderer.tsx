@@ -82,6 +82,16 @@ export default function DocumentRenderer({ statement, readOnly = false, onSaved 
           </div>
         </div>
         <div>
+          <div className="text-xs text-gray-400">Personas kods</div>
+          <div className="font-medium text-gray-800" style={{ fontSize: '27px' }}>
+            {statement.patient_personal_code || '—'}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-gray-400">Datums</div>
+          <div className="font-medium text-gray-800">{statement.visit_date}</div>
+        </div>
+        <div>
           <div className="text-xs text-gray-400">{statement.doctor_title || 'Ārsts'}</div>
           <div className="font-medium text-gray-800">{statement.doctor_name || '—'}</div>
         </div>

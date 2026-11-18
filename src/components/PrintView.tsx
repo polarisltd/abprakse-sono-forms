@@ -28,6 +28,7 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
     ...statement.form_data,
     patient_name: statement.patient_name,
     patient_birth_year: statement.patient_birth_year,
+    patient_personal_code: statement.patient_personal_code,
     visit_date: statement.visit_date,
   };
 
@@ -228,7 +229,6 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ formDef, statement }, ref
       <div className="mt-4 pt-3 border-t border-black flex justify-between">
         <div>
           <div className="mb-6">Ārsts (paraksts, spiedogs): _____________________</div>
-          <div>Datums: {statement.visit_date}</div>
         </div>
         {statement.doctor_name && (
           <div className="text-right text-gray-500">

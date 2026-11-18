@@ -19,6 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         d.title AS doctor_title,
         COALESCE(s.patient_name, p.name) AS patient_name,
         COALESCE(s.patient_birth_year, p.birth_year) AS patient_birth_year,
+        COALESCE(s.patient_personal_code, p.personal_code) AS patient_personal_code,
         s.form_data, s.is_complete, s.created_at::text, s.updated_at::text,
         s.template_id, s.template_name, s.body_html, s.patient_id
       FROM statements s
@@ -41,12 +42,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const sql = getDb();
   try {
     const body = await request.json();
-    const { patient_name, patient_birth_year, visit_date, form_data, is_complete, body_html } = body;
+    const { patient_name, patient_birth_year, patient_personal_code, visit_date, form_data, is_complete, body_html } = body;
 
     // Coerce empty strings to null; parse birth year as integer
     const safeName = (patient_name !== '' && patient_name != null) ? String(patient_name) : null;
     const safeBirthYear = (patient_birth_year !== '' && patient_birth_year != null)
       ? parseInt(String(patient_birth_year), 10) || null
+      : null;
+    // Unlike name/year this one can be cleared: a doctor fixing a typo must be
+    // able to blank the code, so the column is only left alone when the key is absent.
+    const hasPersonalCode = patient_personal_code !== undefined;
+    const safePersonalCode = (patient_personal_code !== '' && patient_personal_code != null)
+      ? String(patient_personal_code).trim().slice(0, 32) || null
       : null;
     const safeDate = (visit_date !== '' && visit_date != null) ? String(visit_date) : null;
     const safeComplete = is_complete != null ? Boolean(is_complete) : null;
@@ -56,6 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       UPDATE statements SET
         patient_name       = COALESCE(${safeName}, patient_name),
         patient_birth_year = COALESCE(${safeBirthYear}, patient_birth_year),
+        patient_personal_code = CASE WHEN ${hasPersonalCode} THEN ${safePersonalCode} ELSE patient_personal_code END,
         visit_date         = COALESCE(${safeDate}::date, visit_date),
         form_data          = COALESCE(${form_data != null ? JSON.stringify(form_data) : null}::jsonb, form_data),
         is_complete        = COALESCE(${safeComplete}, is_complete),
@@ -77,6 +85,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         d.title AS doctor_title,
         COALESCE(s.patient_name, p.name) AS patient_name,
         COALESCE(s.patient_birth_year, p.birth_year) AS patient_birth_year,
+        COALESCE(s.patient_personal_code, p.personal_code) AS patient_personal_code,
         s.form_data, s.is_complete, s.created_at::text, s.updated_at::text,
         s.template_id, s.template_name, s.body_html, s.patient_id
       FROM statements s

@@ -14,17 +14,19 @@ export const PRACTICE = {
  * display concern only, so it's its own set rather than overloading
  * `common` (drives save routing) or `sensitive` (drives template exclusion).
  */
-export const PATIENT_IDENTITY_FIELD_IDS = new Set(['patient_name', 'patient_birth_year', 'personas_kods']);
+export const PATIENT_IDENTITY_FIELD_IDS = new Set(['patient_name', 'patient_birth_year', 'patient_personal_code']);
 
 const COMMON_HEADER_ROWS = [
   { fields: [{ id: 'patient_name', label: 'Vārds, uzvārds', type: 'text' as const, common: true }] },
   { fields: [{ id: 'patient_birth_year', label: 'Dzimšanas gads (dz. g.)', type: 'year' as const, common: true }] },
+  { fields: [{ id: 'patient_personal_code', label: 'Personas kods', type: 'text' as const, common: true }] },
   { fields: [{ id: 'visit_date', label: 'Datums', type: 'date' as const, common: true }] },
 ];
 
 const PREGNANCY_HEADER_ROWS = [
   { fields: [{ id: 'patient_name', label: 'Vārds, uzvārds', type: 'text' as const, common: true }] },
   { fields: [{ id: 'patient_birth_year', label: 'Dzimšanas gads (dz. g.)', type: 'year' as const, common: true }] },
+  { fields: [{ id: 'patient_personal_code', label: 'Personas kods', type: 'text' as const, common: true }] },
   { fields: [{ id: 'visit_date', label: 'Datums', type: 'date' as const, common: true }] },
   { fields: [{ id: 'pm', label: 'P.M. (pēdējās menstruācijas)', type: 'text' as const }] },
   { fields: [{ id: 'grutn_atbilst', label: 'Grūtn. atbilst', type: 'text' as const }] },
@@ -255,7 +257,7 @@ export const FORMS: FormDef[] = [
         title: 'Pacienta dati',
         rows: [
           { fields: [{ id: 'patient_name', label: 'Paciente (vārds, uzvārds)', type: 'text', common: true }] },
-          { fields: [{ id: 'personas_kods', label: 'Personas kods', type: 'text', sensitive: true }] },
+          { fields: [{ id: 'patient_personal_code', label: 'Personas kods', type: 'text', common: true }] },
           { fields: [{ id: 'visit_date', label: 'Datums', type: 'date', common: true }] },
           { fields: [{ id: 'gestacijas_nedelas', label: 'Gestācijas nedēļas pēc p.m.', type: 'text' }] },
         ],
@@ -756,6 +758,7 @@ export const FORMS: FormDef[] = [
         rows: [
           { fields: [{ id: 'patient_name', label: 'Vārds, uzvārds', type: 'text', common: true }] },
           { fields: [{ id: 'patient_birth_year', label: 'Dzimšanas gads', type: 'year', common: true }] },
+          { fields: [{ id: 'patient_personal_code', label: 'Personas kods', type: 'text', common: true }] },
           { fields: [{ id: 'visit_date', label: 'Datums', type: 'date', common: true }] },
           { fields: [{ id: 'pm', label: 'P.M. (pēdējās menstruācijas)', type: 'text' }] },
           { fields: [{ id: 'grutn_atbilst', label: 'Grūtn. atbilst', type: 'text' }] },
@@ -957,6 +960,7 @@ export const FORMS: FormDef[] = [
         rows: [
           { fields: [{ id: 'patient_name', label: 'Vārds, uzvārds', type: 'text', common: true }] },
           { fields: [{ id: 'patient_birth_year', label: 'Dzimšanas gads (dz. g.)', type: 'year', common: true }] },
+          { fields: [{ id: 'patient_personal_code', label: 'Personas kods', type: 'text', common: true }] },
           { fields: [{ id: 'visit_date', label: 'Izmeklēšanas datums', type: 'date', common: true }] },
         ],
       },
@@ -1321,7 +1325,7 @@ export const FORMS: FormDef[] = [
         title: 'Pacienta dati',
         rows: [
           { fields: [{ id: 'patient_name', label: 'Paciente (vārds, uzvārds)', type: 'text', common: true }] },
-          { fields: [{ id: 'personas_kods', label: 'Personas kods', type: 'text', sensitive: true }] },
+          { fields: [{ id: 'patient_personal_code', label: 'Personas kods', type: 'text', common: true }] },
           { fields: [{ id: 'visit_date', label: 'Datums', type: 'date', common: true }] },
           { fields: [{ id: 'gestacijas_nedelas', label: 'Gestācijas nedēļas pēc p.m.', type: 'text' }] },
         ],

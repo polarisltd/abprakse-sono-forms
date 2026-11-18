@@ -21,6 +21,8 @@ export interface Statement {
   doctor_title?: string;
   patient_name: string | null;
   patient_birth_year: number | null;
+  /** 'Personas kods' — resolved from the column, else the roster (patients.personal_code). Shown on every form and PDF. */
+  patient_personal_code: string | null;
   form_data: Record<string, unknown>;
   is_complete: boolean;
   created_at: string;

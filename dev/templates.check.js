@@ -34,14 +34,14 @@ const dirty = {
   patient_name: 'Anna Ozola',
   patient_birth_year: 1987,
   visit_date: '2026-09-19',
-  personas_kods: '010187-12345',
+  patient_personal_code: '010187-12345',
   not_a_real_field_xyz: 'injected',
 };
 
 for (const formId of FORM_IDS) {
   check(`${formId}: no patient data survives sanitize`, () => {
     const out = t.sanitizeTemplateData(formId, dirty);
-    for (const k of ['patient_name', 'patient_birth_year', 'visit_date', 'personas_kods']) {
+    for (const k of ['patient_name', 'patient_birth_year', 'visit_date', 'patient_personal_code']) {
       assert.ok(!(k in out), `${k} leaked into a permanent template row`);
     }
   });
@@ -81,7 +81,7 @@ for (const formId of FORM_IDS) {
 
   check(`${formId}: apply never writes or clears patient data in a live form`, () => {
     const vals = t.applicableTemplateValues(formId, dirty);
-    const keys = ['patient_name', 'patient_birth_year', 'visit_date', 'personas_kods',
+    const keys = ['patient_name', 'patient_birth_year', 'visit_date', 'patient_personal_code',
                   'not_a_real_field_xyz'];
     for (const k of keys) {
       assert.ok(!(k in vals), `${k} would be written into a live form`);
@@ -89,13 +89,16 @@ for (const formId of FORM_IDS) {
   });
 }
 
-check('at least one form actually declares a sensitive field', () => {
-  const flagged = FORM_IDS.flatMap((id) => t.formFields(id).filter((f) => f.sensitive === true));
-  assert.ok(flagged.length > 0, 'no sensitive fields found — the exclusion check is vacuous');
-  assert.ok(
-    flagged.some((f) => f.id === 'personas_kods'),
-    'personas_kods is no longer flagged sensitive'
-  );
+check('every form carries Personas kods as a column-backed common field', () => {
+  for (const id of FORM_IDS) {
+    const field = t.formFields(id).find((f) => f.id === 'patient_personal_code');
+    assert.ok(field, `${id} has no patient_personal_code field`);
+    assert.strictEqual(field.common, true, `${id}: patient_personal_code must be common (saved as a column)`);
+  }
+  for (const id of FORM_IDS) {
+    const ids = t.templatableFieldIds(id).map((f) => f.id);
+    assert.ok(!ids.includes('patient_personal_code'), `${id}: patient_personal_code leaks into templates`);
+  }
 });
 
 check('slotCode zero-pads', () => {

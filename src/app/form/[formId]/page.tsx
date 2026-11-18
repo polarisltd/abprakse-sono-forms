@@ -121,6 +121,7 @@ export default function FormPage() {
     ...((statement.form_data as Record<string, unknown>) ?? {}),
     patient_name: statement.patient_name ?? '',
     patient_birth_year: statement.patient_birth_year ?? '',
+    patient_personal_code: statement.patient_personal_code ?? '',
     visit_date: statement.visit_date ?? new Date().toISOString().slice(0, 10),
   };
 
