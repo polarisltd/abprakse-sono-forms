@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { forwardRef, useEffect, useImperativeHandle } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { TextStyleKit } from '@tiptap/extension-text-style';
@@ -10,6 +10,11 @@ export interface RichTextEditorProps {
   onChange: (html: string) => void;
   onBlur?: () => void;
   readOnly?: boolean;
+}
+
+/** Lets a parent insert text at the caret (voice dictation). */
+export interface RichTextEditorHandle {
+  insertText: (text: string) => void;
 }
 
 /** Latvian labels, four steps — matches the "font size can be changed" ask exactly, nothing more. */
@@ -33,7 +38,10 @@ const DEFAULT_FONT_SIZE = '18px';
  * normalized away rather than smuggled through — see
  * specs/feature-document-templates.md §7.1.
  */
-export default function RichTextEditor({ value, onChange, onBlur, readOnly = false }: RichTextEditorProps) {
+const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(function RichTextEditor(
+  { value, onChange, onBlur, readOnly = false },
+  ref
+) {
   const editor = useEditor({
     immediatelyRender: false,
     editable: !readOnly,
@@ -92,6 +100,19 @@ export default function RichTextEditor({ value, onChange, onBlur, readOnly = fal
     }
   }, [value, editor]);
 
+  // Inserts at the caret; chain().focus() restores ProseMirror's last
+  // selection, so dictation lands where the doctor was typing.
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertText: (text: string) => {
+        if (!editor || editor.isDestroyed) return;
+        editor.chain().focus().insertContent(`${text} `).run();
+      },
+    }),
+    [editor]
+  );
+
   if (!editor) {
     return <div className="min-h-[16rem] border border-gray-300 rounded animate-pulse bg-gray-50" />;
   }
@@ -138,7 +159,9 @@ export default function RichTextEditor({ value, onChange, onBlur, readOnly = fal
       <EditorContent editor={editor} />
     </div>
   );
-}
+});
+
+export default RichTextEditor;
 
 function ToolbarButton({
   active,

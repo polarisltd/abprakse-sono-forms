@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { Statement } from '@/lib/types';
-import RichTextEditor from './RichTextEditor';
+import RichTextEditor, { RichTextEditorHandle } from './RichTextEditor';
+import VoiceButton from './VoiceButton';
 
 interface Props {
   statement: Statement;
@@ -23,6 +24,7 @@ export default function DocumentRenderer({ statement, readOnly = false, onSaved 
   const [saveState, setSaveState] = useState<SaveState>('idle');
 
   const htmlRef = useRef(html);
+  const editorRef = useRef<RichTextEditorHandle>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = useCallback(async () => {
@@ -97,7 +99,13 @@ export default function DocumentRenderer({ statement, readOnly = false, onSaved 
         </div>
       </div>
 
-      <RichTextEditor value={html} onChange={handleChange} onBlur={saveNow} readOnly={readOnly} />
+      {!readOnly && (
+        <VoiceButton
+          onTranscript={(text) => editorRef.current?.insertText(text)}
+          title="Diktēt dokumenta tekstā, kur atrodas kursors"
+        />
+      )}
+      <RichTextEditor ref={editorRef} value={html} onChange={handleChange} onBlur={saveNow} readOnly={readOnly} />
     </div>
   );
 }

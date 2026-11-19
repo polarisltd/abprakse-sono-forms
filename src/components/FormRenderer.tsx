@@ -5,6 +5,7 @@ import { FormDef, FormField, Statement } from '@/lib/types';
 import { commonFieldIds } from '@/lib/templates';
 import { PATIENT_IDENTITY_FIELD_IDS } from '@/lib/form-definitions';
 import TemplateBar, { TemplateBarHandle } from './TemplateBar';
+import VoiceButton from './VoiceButton';
 
 /**
  * 50% over the default field size (text-lg, 18px — bumped one tier up from
@@ -39,6 +40,8 @@ export default function FormRenderer({
 }: Props) {
   const [data, setData] = useState<Record<string, unknown>>(initialData);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  // The text field the doctor last tapped — the target for voice dictation.
+  const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
 
   // dataRef always mirrors the latest data — updated synchronously before any save
   const dataRef = useRef<Record<string, unknown>>(initialData);
@@ -120,6 +123,28 @@ export default function FormRenderer({
       saveNow();
     },
     [saveNow]
+  );
+
+  /**
+   * Voice dictation: the transcript is appended to the focused text field and
+   * saved immediately, through the same path as typing.
+   */
+  const appendDictation = useCallback(
+    (text: string) => {
+      if (!activeFieldId) return;
+      const current = String(dataRef.current[activeFieldId] ?? '');
+      const next = current.trim() ? `${current.trimEnd()} ${text}` : text;
+      handleChange(activeFieldId, next, true);
+    },
+    [activeFieldId, handleChange]
+  );
+
+  const dictationField = useMemo(
+    () =>
+      activeFieldId
+        ? formDef.sections.flatMap((s) => s.rows.flatMap((r) => r.fields)).find((f) => f.id === activeFieldId)
+        : undefined,
+    [activeFieldId, formDef]
   );
 
   /** Snapshot for TemplateBar's Save / Pārrakstīt, read only when tapped. */
@@ -242,6 +267,7 @@ export default function FormRenderer({
           value={String(value)}
           disabled={readOnly}
           onChange={(e) => handleChange(field.id, e.target.value)}
+          onFocus={() => setActiveFieldId(field.id)}
           onBlur={(e) => handleBlur(field.id, e.target.value)}
         />
       );
@@ -268,6 +294,7 @@ export default function FormRenderer({
           step={field.type === 'decimal' ? '0.1' : undefined}
           disabled={readOnly}
           onChange={(e) => handleChange(field.id, e.target.value)}
+          onFocus={() => setActiveFieldId(field.id)}
           onBlur={(e) => handleBlur(field.id, e.target.value)}
         />
         {field.unit && <span className="text-xs text-gray-500 whitespace-nowrap">{field.unit}</span>}
@@ -287,6 +314,20 @@ export default function FormRenderer({
           getCurrentData={getCurrentData}
           onApply={applyTemplate}
         />
+      )}
+
+      {/* Voice dictation into the focused text field */}
+      {!readOnly && (
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <VoiceButton
+            onTranscript={appendDictation}
+            disabled={!dictationField || dictationField.type === 'toggle'}
+            title={dictationField ? `Diktēt uz: ${dictationField.label || 'lauku'}` : 'Vispirms izvēlieties tekstu lauku'}
+          />
+          {dictationField && (
+            <span className="text-xs text-gray-500 truncate">Diktēt uz: {dictationField.label || 'lauku'}</span>
+          )}
+        </div>
       )}
 
       {/* Save indicator */}
