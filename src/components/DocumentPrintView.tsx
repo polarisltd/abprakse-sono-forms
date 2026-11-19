@@ -73,7 +73,7 @@ const DocumentPrintView = forwardRef<HTMLDivElement, Props>(({ statement }, ref)
           <div className="mb-6">Ārsts (paraksts, spiedogs): _____________________</div>
         </div>
         {statement.doctor_name && (
-          <div className="text-right text-gray-500"><span className="text-black">{statement.doctor_title || 'Ārsts'}</span>: {statement.doctor_name}</div>
+          <div className="text-right text-black">{statement.doctor_title || 'Ārsts'}: {statement.doctor_name}</div>
         )}
       </div>
     </div>
